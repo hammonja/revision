@@ -1,0 +1,295 @@
+[
+  {
+    "date": "2026-05-25",
+    "title": "Morning 1",
+    "start_time": "09:00",
+    "end_time": "09:45",
+    "colour": "auto",
+    "subject": "Physical Education",
+    "topics": [],
+    "completed": false
+  },
+  {
+    "date": "2026-05-25",
+    "title": "Morning 2",
+    "start_time": "10:00",
+    "end_time": "10:45",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-25",
+    "title": "Lunch",
+    "start_time": "12:00",
+    "end_time": "13:00",
+    "colour": "#c13584",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-25",
+    "title": "Afternoon 1",
+    "start_time": "13:15",
+    "end_time": "14:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-25",
+    "title": "Afternoon 2",
+    "start_time": "14:15",
+    "end_time": "15:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-26",
+    "title": "Morning 1",
+    "start_time": "09:00",
+    "end_time": "09:45",
+    "colour": "auto",
+    "subject": "History",
+    "topics": [
+      "war"
+    ],
+    "completed": false
+  },
+  {
+    "date": "2026-05-26",
+    "title": "Morning 2",
+    "start_time": "10:00",
+    "end_time": "10:45",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-26",
+    "title": "Lunch",
+    "start_time": "12:00",
+    "end_time": "13:00",
+    "colour": "#c13584",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-26",
+    "title": "Afternoon 1",
+    "start_time": "13:15",
+    "end_time": "14:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-26",
+    "title": "Afternoon 2",
+    "start_time": "14:15",
+    "end_time": "15:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-27",
+    "title": "Morning 1",
+    "start_time": "09:00",
+    "end_time": "09:45",
+    "colour": "auto",
+    "subject": "Physical Education",
+    "topics": [
+      "Physical training",
+      "Applied anatomy and physiology"
+    ],
+    "completed": false
+  },
+  {
+    "date": "2026-05-27",
+    "title": "Morning 2",
+    "start_time": "10:00",
+    "end_time": "10:45",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-27",
+    "title": "Lunch",
+    "start_time": "12:00",
+    "end_time": "13:00",
+    "colour": "#c13584",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-27",
+    "title": "Afternoon 1",
+    "start_time": "13:15",
+    "end_time": "14:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-27",
+    "title": "Afternoon 2",
+    "start_time": "14:15",
+    "end_time": "15:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-28",
+    "title": "Morning 1",
+    "start_time": "09:00",
+    "end_time": "09:45",
+    "colour": "auto",
+    "subject": "Physical Education",
+    "topics": [],
+    "completed": false
+  },
+  {
+    "date": "2026-05-28",
+    "title": "Morning 2",
+    "start_time": "10:00",
+    "end_time": "10:45",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-28",
+    "title": "Lunch",
+    "start_time": "12:00",
+    "end_time": "13:00",
+    "colour": "#c13584",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-28",
+    "title": "Afternoon 1",
+    "start_time": "13:15",
+    "end_time": "14:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-28",
+    "title": "Afternoon 2",
+    "start_time": "14:15",
+    "end_time": "15:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-29",
+    "title": "Morning 1",
+    "start_time": "09:00",
+    "end_time": "09:45",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-29",
+    "title": "Morning 2",
+    "start_time": "10:00",
+    "end_time": "10:45",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-29",
+    "title": "Lunch",
+    "start_time": "12:00",
+    "end_time": "13:00",
+    "colour": "#c13584",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-29",
+    "title": "Afternoon 1",
+    "start_time": "13:15",
+    "end_time": "14:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-29",
+    "title": "Afternoon 2",
+    "start_time": "14:15",
+    "end_time": "15:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-30",
+    "title": "Morning 1",
+    "start_time": "09:00",
+    "end_time": "09:45",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-30",
+    "title": "Morning 2",
+    "start_time": "10:00",
+    "end_time": "10:45",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-30",
+    "title": "Lunch",
+    "start_time": "12:00",
+    "end_time": "13:00",
+    "colour": "#c13584",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-30",
+    "title": "Afternoon 1",
+    "start_time": "13:15",
+    "end_time": "14:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-30",
+    "title": "Afternoon 2",
+    "start_time": "14:15",
+    "end_time": "15:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-31",
+    "title": "Morning 1",
+    "start_time": "09:00",
+    "end_time": "09:45",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-31",
+    "title": "Morning 2",
+    "start_time": "10:00",
+    "end_time": "10:45",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-31",
+    "title": "Lunch",
+    "start_time": "12:00",
+    "end_time": "13:00",
+    "colour": "#c13584",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-31",
+    "title": "Afternoon 1",
+    "start_time": "13:15",
+    "end_time": "14:00",
+    "colour": "auto",
+    "subject": ""
+  },
+  {
+    "date": "2026-05-31",
+    "title": "Afternoon 2",
+    "start_time": "14:15",
+    "end_time": "15:00",
+    "colour": "auto",
+    "subject": ""
+  }
+]

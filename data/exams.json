@@ -1,0 +1,123 @@
+{
+  "source_file": "24-May-2026 Exam timetable for 7173 Hammond Joseph.pdf",
+  "candidate": {
+    "name": "Joseph Hammond",
+    "date_of_birth": "20 Jul 2011",
+    "registration_form": "10PHA",
+    "candidate_number": "7173 (Internal)",
+    "uci": "516230247173L"
+  },
+  "exams": [
+    {
+      "date": "Mon, 15 Jun 2026",
+      "start_time": "13:00",
+      "end_time": "14:15",
+      "subject": "Physical Education",
+      "subject_detail": "In House Exam: Year 10 Physical Education",
+      "examination": "Year 10 Physical Education",
+      "duration": "01:15",
+      "location": "Sports Centre",
+      "seat": "C6"
+    },
+    {
+      "date": "Fri, 19 Jun 2026",
+      "start_time": "09:00",
+      "end_time": "10:30",
+      "subject": "History",
+      "subject_detail": "In House Exam: Year 10 History",
+      "examination": "Year 10 History",
+      "duration": "01:30",
+      "location": "Sports Centre",
+      "seat": "F12"
+    },
+    {
+      "date": "Thu, 25 Jun 2026",
+      "start_time": "09:00",
+      "end_time": "10:00",
+      "subject": "Business",
+      "subject_detail": "In House Exam: Year 10 Business",
+      "examination": "Year 10 Business",
+      "duration": "01:00",
+      "location": "GYM",
+      "seat": "F8"
+    },
+    {
+      "date": "Thu, 25 Jun 2026",
+      "start_time": "13:00",
+      "end_time": "14:00",
+      "subject": "Religious Studies",
+      "subject_detail": "In House Exam: Year 10 Religious Studies",
+      "examination": "Year 10 Religious Studies",
+      "duration": "01:00",
+      "location": "GYM",
+      "seat": "C2"
+    },
+    {
+      "date": "Mon, 29 Jun 2026",
+      "start_time": "09:00",
+      "end_time": "10:15",
+      "subject": "Biology Higher",
+      "subject_detail": "In House Exam: Year 10 Biology Higher",
+      "examination": "Year 10 Biology Higher",
+      "duration": "01:15",
+      "location": "HALL",
+      "seat": "C3"
+    },
+    {
+      "date": "Mon, 29 Jun 2026",
+      "start_time": "13:00",
+      "end_time": "14:00",
+      "subject": "English Language",
+      "subject_detail": "In House Exam: Year 10 English Language",
+      "examination": "Year 10 English Language",
+      "duration": "01:00",
+      "location": "GYM",
+      "seat": "H4"
+    },
+    {
+      "date": "Tue, 30 Jun 2026",
+      "start_time": "09:00",
+      "end_time": "10:30",
+      "subject": "Maths Higher (2 x 45 mins)",
+      "subject_detail": "In House Exam: Year 10 Maths Higher (2 x 45 mins)",
+      "examination": "Year 10 Maths Higher (2 x 45 mins)",
+      "duration": "01:30",
+      "location": "HALL",
+      "seat": "B9"
+    },
+    {
+      "date": "Tue, 30 Jun 2026",
+      "start_time": "13:00",
+      "end_time": "14:15",
+      "subject": "Physics Higher",
+      "subject_detail": "In House Exam: Year 10 Physics Higher",
+      "examination": "Year 10 Physics Higher",
+      "duration": "01:15",
+      "location": "HALL",
+      "seat": "C7"
+    },
+    {
+      "date": "Wed, 01 Jul 2026",
+      "start_time": "09:00",
+      "end_time": "10:00",
+      "subject": "English Literature",
+      "subject_detail": "In House Exam: Year 10 English Literature",
+      "examination": "Year 10 English Literature",
+      "duration": "01:00",
+      "location": "GYM",
+      "seat": "H2"
+    },
+    {
+      "date": "Wed, 01 Jul 2026",
+      "start_time": "13:00",
+      "end_time": "14:15",
+      "subject": "Chemistry Higher",
+      "subject_detail": "In House Exam: Year 10 Chemistry Higher",
+      "examination": "Year 10 Chemistry Higher",
+      "duration": "01:15",
+      "location": "HALL",
+      "seat": "C7"
+    }
+  ],
+  "raw_text": "Joseph Hammond\nCandidate Information\nDate of Birth\n20 Jul 2011\nRegistration Form\n10PHA\nCandidate Number\n7173 (Internal)\nUCI\n516230247173L\nDate\nTime\nEnd\nTime\nSubject\nExamination\nDuration\nLocation\nSeat\nMon, 15 Jun 2026\n13:00\n14:15\nIn House Exam: Year 10\nPhysical Education\nYear 10 Physical\nEducation\n01:15\nSports\nCentre\nC6\nFri, 19 Jun 2026\n09:00\n10:30\nIn House Exam: Year 10\nHistory\nYear 10 History\n01:30\nSports\nCentre\nF12\nThu, 25 Jun 2026\n09:00\n10:00\nIn House Exam: Year 10\nBusiness\nYear 10 Business\n01:00\nGYM\nF8\nThu, 25 Jun 2026\n13:00\n14:00\nIn House Exam: Year 10\nReligious Studies\nYear 10 Religious\nStudies\n01:00\nGYM\nC2\nMon, 29 Jun 2026\n09:00\n10:15\nIn House Exam: Year 10\nBiology Higher\nYear 10 Biology\nHigher\n01:15\nHALL\nC3\nMon, 29 Jun 2026\n13:00\n14:00\nIn House Exam: Year 10\nEnglish Language\nYear 10 English\nLanguage\n01:00\nGYM\nH4\nTue, 30 Jun 2026\n09:00\n10:30\nIn House Exam: Year 10\nMaths Higher (2 x 45 mins)\nYear 10 Maths\nHigher (2 x 45\nmins)\n01:30\nHALL\nB9\nTue, 30 Jun 2026\n13:00\n14:15\nIn House Exam: Year 10\nPhysics Higher\nYear 10 Physics\nHigher\n01:15\nHALL\nC7\nWed, 01 Jul 2026\n09:00\n10:00\nIn House Exam: Year 10\nEnglish Literature\nYear 10 English\nLiterature\n01:00\nGYM\nH2\nWed, 01 Jul 2026\n13:00\n14:15\nIn House Exam: Year 10\nChemistry Higher\nYear 10 Chemistry\nHigher\n01:15\nHALL\nC7\nPlease note: The times/days may change if two or more exams are scheduled at the same time.\nCandidate Exam Timetable\nProduced on: 24 May 2026\nPage 1 of 1\nSt. Crispin's School\n"
+}

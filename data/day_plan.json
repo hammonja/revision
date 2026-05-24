@@ -1,0 +1,32 @@
+[
+  {
+    "title": "Morning 1",
+    "start_time": "09:00",
+    "end_time": "09:45",
+    "colour": "auto"
+  },
+  {
+    "title": "Morning 2",
+    "start_time": "10:00",
+    "end_time": "10:45",
+    "colour": "auto"
+  },
+  {
+    "title": "Lunch",
+    "start_time": "12:00",
+    "end_time": "13:00",
+    "colour": "#c13584"
+  },
+  {
+    "title": "Afternoon 1",
+    "start_time": "13:15",
+    "end_time": "14:00",
+    "colour": "auto"
+  },
+  {
+    "title": "Afternoon 2",
+    "start_time": "14:15",
+    "end_time": "15:00",
+    "colour": "auto"
+  }
+]

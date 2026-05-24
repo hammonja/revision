@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Physical Education",
+    "exam_board": "",
+    "paper": "",
+    "colour": "#d7263d"
+  },
+  {
+    "name": "History",
+    "exam_board": "",
+    "paper": "",
+    "colour": "#f46036"
+  },
+  {
+    "name": "Business",
+    "exam_board": "",
+    "paper": "",
+    "colour": "#f2a541"
+  },
+  {
+    "name": "Religious Studies",
+    "exam_board": "",
+    "paper": "",
+    "colour": "#d6a400"
+  },
+  {
+    "name": "Biology Higher",
+    "exam_board": "",
+    "paper": "",
+    "colour": "#7cb342"
+  },
+  {
+    "name": "English Language",
+    "exam_board": "",
+    "paper": "",
+    "colour": "#2e9d5b"
+  },
+  {
+    "name": "Maths Higher (2 x 45 mins)",
+    "exam_board": "",
+    "paper": "",
+    "colour": "#009688"
+  },
+  {
+    "name": "Physics Higher",
+    "exam_board": "",
+    "paper": "",
+    "colour": "#00a5b5"
+  },
+  {
+    "name": "English Literature",
+    "exam_board": "",
+    "paper": "",
+    "colour": "#2f80ed"
+  },
+  {
+    "name": "Chemistry Higher",
+    "exam_board": "",
+    "paper": "",
+    "colour": "#315bdc"
+  }
+]
