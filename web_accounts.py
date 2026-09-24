@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, urlparse
 import accounts
 import topic_import
 import topics
+import help_guides
 
 MAX_REQUEST_BYTES = topic_import.MAX_DOCUMENT_BYTES + 256 * 1024
 
@@ -130,6 +131,10 @@ class AccountHandlerMixin:
         context = accounts.CURRENT_USER.set(user)
         path = urlparse(self.path).path
         try:
+            if not post and (path == "/help" or path.startswith("/help/")):
+                html, self.html_status = help_guides.render(self.application, path, urlparse(self.path).query)
+                self.send_html(html)
+                return
             if not user and path not in ("/login", "/signup"):
                 self.redirect("/login")
                 return

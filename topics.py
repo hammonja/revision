@@ -95,7 +95,7 @@ def render_manager(app, subject, notice=""):
         document.getElementById('analysisStatus').hidden = false;
       }});
     </script>"""
-    return app.render_layout("Topics — " + subject, "subjects", content)
+    return app.render_layout("Topics — " + subject, "subjects", content, help_topic="documents")
 
 
 def clean_drafts():
@@ -168,7 +168,7 @@ def render_review(app, token, draft):
         </div>
       </form>
     </section>"""
-    return app.render_layout("Review topics", "subjects", content, wide=True)
+    return app.render_layout("Review topics", "subjects", content, wide=True, help_topic="documents")
 
 
 def parse_manual(text):

@@ -35,6 +35,18 @@ The legacy files already tracked in this repository remain tracked for compatibi
 are not served publicly by the app. Removing existing personal data from Git history is a
 separate repository maintenance task.
 
+## Help guide
+
+Open **Help** in the navigation or **Help with this page** from any main app screen.
+The guide is also available before signing in at `/help` and contains ten guides covering
+getting started, accounts, subjects, manual topics, document imports, the planner, revision
+sessions, progress, exam timetables and troubleshooting. Search matches individual sections
+and links directly to them. Each guide has an on-page contents list, related guides,
+previous/next navigation, a link to its app screen and a print view.
+
+Help content is maintained in `help_content.py`; routing, search and rendering are in
+`help_guides.py`. It uses no external services and exposes no personal account data.
+
 ## Topics and documents
 
 1. Add a subject on **Subjects**, including the exam board and paper if known.

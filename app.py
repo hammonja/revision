@@ -20,6 +20,7 @@ import accounts
 from accounts import user_dir, user_file, atomic_json
 from web_accounts import AccountHandlerMixin
 import topics
+import help_guides
 
 HOST = os.environ.get("HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT", "3000"))
@@ -429,17 +430,18 @@ def colour_options(selected_colour, include_auto=False):
     return "\n".join(options)
 
 
-def render_layout(title, active_page, content, wide=False, body_attrs=""):
+def render_layout(title, active_page, content, wide=False, body_attrs="", help_topic=None):
     nav_items = [
         ("revision", "/revision"),
         ("exams", "/exams"),
         ("subjects", "/subjects"),
         ("planner", "/planner"),
         ("settings", "/settings"),
+        ("help", "/help"),
     ]
     user = accounts.CURRENT_USER.get()
     if user is None:
-        nav_items = []
+        nav_items = [("help", "/help"), ("sign in", "/login")]
     brand = escape(user["display_name"] + "'s revision") if user else "Revision"
     account_menu = '<form method="post" action="/logout"><button class="ghost-button" type="submit">Sign out</button></form>' if user else ""
     storage_prefix = user["id"] if user else "guest"
@@ -449,6 +451,8 @@ def render_layout(title, active_page, content, wide=False, body_attrs=""):
         links.append(f'<a class="nav-link{active}" href="{href}">{escape(label)}</a>')
 
     main_class = ' class="wide"' if wide else ""
+    help_topic = help_topic or help_guides.PAGE_HELP.get(active_page)
+    page_help = f'<div class="page-help"><a href="/help/{help_topic}">Help with this page →</a></div>' if help_topic else ""
 
     return f"""<!doctype html>
 <html lang="en">
@@ -500,9 +504,19 @@ def render_layout(title, active_page, content, wide=False, body_attrs=""):
 
         .nav {{
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             color: #9b948a;
         }}
+
+        .page-help {{
+            display: flex;
+            justify-content: flex-end;
+            margin: 0 0 14px;
+            font-size: 14px;
+        }}
+
+        .page-help a {{ color: #24655e; text-underline-offset: 3px; }}
 
         .nav-link {{
             padding: 8px 14px;
@@ -1251,6 +1265,7 @@ def render_layout(title, active_page, content, wide=False, body_attrs=""):
         </nav>{account_menu}</div>
     </header>
     <main{main_class}>
+        {page_help}
         {content}
     </main>
 <script>
@@ -1840,7 +1855,7 @@ def render_revision(query):
         calendar_html = """
         <section class="panel">
             <h1>Revision</h1>
-            <p>Use the Day plan populate button in Settings to add revision slots here.</p>
+            <p>Use the Day plan Populate button in <a href="/planner">Planner</a> to add revision slots here.</p>
         </section>
         """
 
