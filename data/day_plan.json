@@ -28,5 +28,11 @@
     "start_time": "14:15",
     "end_time": "15:00",
     "colour": "auto"
+  },
+  {
+    "title": "Evening",
+    "start_time": "15:30",
+    "end_time": "16:15",
+    "colour": "auto"
   }
 ]

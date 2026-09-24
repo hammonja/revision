@@ -1,11 +1,5 @@
 [
   {
-    "name": "Physical Education",
-    "exam_board": "",
-    "paper": "",
-    "colour": "#d7263d"
-  },
-  {
     "name": "History",
     "exam_board": "",
     "paper": "",
@@ -58,5 +52,11 @@
     "exam_board": "",
     "paper": "",
     "colour": "#315bdc"
+  },
+  {
+    "name": "Physical Education",
+    "exam_board": "",
+    "paper": "",
+    "colour": "#d7263d"
   }
 ]
