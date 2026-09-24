@@ -1,6 +1,6 @@
 # Revision
 
-A personal GCSE revision planner with accounts, subjects, exam timetables, topic progress and document imports.
+A personal GCSE and A-level revision planner with accounts, subjects, school and exam timetables, topic progress and document imports.
 
 ## Run
 
@@ -38,9 +38,9 @@ separate repository maintenance task.
 ## Help guide
 
 Open **Help** in the navigation or **Help with this page** from any main app screen.
-The guide is also available before signing in at `/help` and contains ten guides covering
+The guide is also available before signing in at `/help` and contains eleven guides covering
 getting started, accounts, subjects, manual topics, document imports, the planner, revision
-sessions, progress, exam timetables and troubleshooting. Search matches individual sections
+sessions, school timetables and daily plans, progress, exam timetables and troubleshooting. Search matches individual sections
 and links directly to them. Each guide has an on-page contents list, related guides,
 previous/next navigation, a link to its app screen and a print view.
 
@@ -48,6 +48,9 @@ Help content is maintained in `help_content.py`; routing, search and rendering a
 `help_guides.py`. It uses no external services and exposes no personal account data.
 
 ## Topics and documents
+
+Choose **GCSE** or **A-level** under **Settings → Your studies**. This private account preference
+defaults to GCSE and guides subsequent topic analysis. It does not replace existing topics or progress.
 
 1. Add a subject on **Subjects**, including the exam board and paper if known.
 2. Select **Add topics / documents** beside the subject.
@@ -67,6 +70,30 @@ Unaccepted documents remain private drafts for up to 24 hours. Pending reviews a
 from the subject's document page. Discard deletes the draft; saving keeps the original file.
 Expired draft files are removed when that account next opens its document page or imports.
 Document analysis failure does not modify the saved topic list.
+
+## School timetable and daily plan
+
+In **Planner**, upload a school lesson timetable or choose **Enter a timetable manually**.
+Uploads support PDF (1–12 unlocked pages), Word (`.doc`/`.docx`), Excel (`.xls`/`.xlsx`), CSV,
+text, Markdown, PNG, JPEG and WebP, up to 10 MB. PDF or clear images are preferable for visual tables;
+non-PDF document inputs may not include embedded images. Other formats should be exported to PDF.
+
+OpenAI returns a one- or two-week pattern for review. PDFs are rendered to bounded page images
+with the existing PyMuPDF dependency so table cells retain their spatial layout. The review allows
+corrections to week/day, subject or activity, period, times, type, room and teacher, and adding or
+omitting entries. Missing times remain blank, blank cells are not assumed to be free periods, and
+unknown class codes remain editable. Check the Week A Monday, term dates and holiday exclusions
+before saving. Two-week cycles alternate by calendar week, including holidays.
+
+Planner then shows today's school activities and existing revision sessions, with date navigation
+and a print view. School activities also appear on the Revision calendar without affecting topic
+progress. **Use for revision** turns one dated free period into an editable revision slot; duplicate
+or overlapping sessions are prevented. Timetable changes preserve existing revision sessions.
+
+Schedules live in each account's `school_timetable.json`; the qualification is in `preferences.json`.
+Uploads remain private drafts for 24 hours until accepted or discarded. Saved source documents
+are account-scoped uploads. Concurrent edits are rejected when based on an outdated timetable.
+Timetable and topic analysis share the existing account/site API budgets and configuration.
 
 ## OpenAI configuration
 
@@ -105,4 +132,6 @@ python -m unittest discover -s tests -v
 The suite uses temporary storage and a stubbed OpenAI response. It verifies migration,
 account isolation, authentication, CSRF, document review/accept/cancel, manual topics,
 concurrent requests and preservation of revision data. It does not spend API credits.
+School tests cover qualification isolation, review corrections, A/B rotation, holidays, missing and
+invalid times, draft expiry, private downloads, stale edits, calendar display and free-period revision.
 `REVISION_DATA_DIR` and `REVISION_LEGACY_UPLOADS` can point to isolated directories for testing.

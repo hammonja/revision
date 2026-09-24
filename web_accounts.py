@@ -11,6 +11,10 @@ import accounts
 import topic_import
 import topics
 import help_guides
+import preferences
+import school_timetable as school
+import timetable_import
+import timetable_views
 
 MAX_REQUEST_BYTES = topic_import.MAX_DOCUMENT_BYTES + 256 * 1024
 
@@ -117,11 +121,11 @@ class AccountHandlerMixin:
         if self.headers.get("Content-Type", "").startswith("multipart/form-data"):
             self.multipart = self.parse_multipart(self.request_body)
             return {name: [value["content"].decode("utf-8")] for name, value in self.multipart.items() if not value["filename"]}
-        return parse_qs(self.request_body.decode("utf-8"), keep_blank_values=True, max_num_fields=1000)
+        return parse_qs(self.request_body.decode("utf-8"), keep_blank_values=True, max_num_fields=2500)
 
     def show_error_page(self, message, status=400):
         self.html_status = status
-        self.send_html(self.application.render_layout("Please try again", "subjects", f'<section class="panel"><h1>Please try again</h1><p class="notice error-notice" role="alert">{escape(message)}</p><p><a href="/subjects">Back to subjects</a> · <a href="/login">Sign in</a></p><p>You can go back in your browser to keep editing your form.</p></section>'))
+        self.send_html(self.application.render_layout("Please try again", "subjects", f'<section class="panel"><h1>Please try again</h1><p class="notice error-notice" role="alert">{escape(message)}</p><p><a href="/planner">Planner</a> · <a href="/subjects">Subjects</a> · <a href="/settings">Settings</a></p><p>You can go back in your browser to keep editing your form.</p></section>'))
 
     def dispatch_personal(self, post):
         self.html_status = 200
@@ -159,7 +163,7 @@ class AccountHandlerMixin:
                 self.redirect("/login")
                 return
             with accounts.user_lock(user["id"]):
-                if self.handle_topics(path, form, post):
+                if self.handle_school(path, form, post) or self.handle_topics(path, form, post):
                     return
                 if post:
                     super().do_POST()
@@ -196,6 +200,59 @@ class AccountHandlerMixin:
                 return item
         raise ValueError("Choose a subject from your own subjects page first.")
 
+    def consume_analysis_budget(self):
+        if not accounts.consume_limit("analysis", accounts.current_user()["id"], int(os.environ.get("REVISION_AI_DAILY_LIMIT", "10")), 86400):
+            raise ValueError("You have reached today's document limit. You can still enter topics and timetables manually.")
+        if not accounts.consume_limit("analysis_total", "all", int(os.environ.get("REVISION_AI_SITE_DAILY_LIMIT", "100")), 86400):
+            raise ValueError("Document analysis has reached today's site limit. You can still enter topics and timetables manually.")
+
+    def handle_school(self, path, form, post):
+        app = self.application
+        query = parse_qs(urlparse(self.path).query)
+        value = lambda key: form.get(key, [""])[0]
+        if post and path == "/settings/studies":
+            preferences.save_qualification(value("qualification"))
+            self.redirect("/settings?saved=studies")
+        elif not post and path == "/planner/timetable/review":
+            token = query.get("draft", [""])[0]
+            draft = school.get_draft(token)
+            self.send_html(timetable_views.render_review(app, school.defaults(draft["analysis"]), draft["version"], token, draft["analysis"].get("note", "")))
+        elif not post and path == "/planner/timetable/edit":
+            saved = school.load()
+            self.send_html(timetable_views.render_review(app, saved or school.defaults(), saved.get("version", "")))
+        elif post and path == "/planner/timetable/upload":
+            upload = self.multipart.get("document", {})
+            filename = app.safe_upload_name(upload.get("filename") or "document")[:180]
+            content = upload.get("content", b"")
+            timetable_import.validate_document(content, filename)
+            if not topic_import.is_configured():
+                raise ValueError("Timetable analysis is not configured. You can still enter a timetable manually.")
+            self.consume_analysis_budget()
+            analysis = timetable_import.analyse_document(content, filename, preferences.qualification())
+            token = school.save_draft(filename, content, analysis)
+            self.redirect("/planner/timetable/review?draft=" + token)
+        elif post and path == "/planner/timetable/save":
+            token = value("draft")
+            draft = school.get_draft(token) if token else None
+            values = school.form_values(form)
+            try:
+                school.save(values, value("version"), token)
+            except ValueError as error:
+                self.html_status = 400
+                self.send_html(timetable_views.render_review(app, values, value("version"), token,
+                               draft["analysis"].get("note", "") if draft else "", str(error)))
+                return True
+            self.redirect("/planner?notice=School+timetable+saved.+Choose+a+date+to+see+your+daily+plan.")
+        elif post and path == "/planner/timetable/discard":
+            school.discard_draft(value("draft"))
+            self.redirect("/planner?notice=Upload+discarded.+Your+saved+timetable+has+not+changed.")
+        elif post and path == "/planner/timetable/use-free-period":
+            school.add_revision(app, value("date"), value("index"), value("version"))
+            self.redirect("/revision?view=week&date=" + value("date"))
+        else:
+            return False
+        return True
+
     def handle_topics(self, path, form, post):
         app = self.application
         query = parse_qs(urlparse(self.path).query)
@@ -227,12 +284,8 @@ class AccountHandlerMixin:
                 raise ValueError("Choose a PDF, Word (.docx), text or Markdown document up to 10 MB.")
             if not topic_import.is_configured():
                 raise ValueError("Document analysis is not set up yet. You can still add topics manually.")
-            # Both account and installation budgets prevent unlimited public API use.
-            if not accounts.consume_limit("analysis", accounts.current_user()["id"], int(os.environ.get("REVISION_AI_DAILY_LIMIT", "10")), 86400):
-                raise ValueError("You have reached today's document limit. You can still add topics manually.")
-            if not accounts.consume_limit("analysis_total", "all", int(os.environ.get("REVISION_AI_SITE_DAILY_LIMIT", "100")), 86400):
-                raise ValueError("Document analysis has reached today's site limit. You can still add topics manually.")
-            analysis = topic_import.analyse_document(content, filename, subject, subject_data.get("exam_board", ""), subject_data.get("paper", ""))
+            self.consume_analysis_budget()
+            analysis = topic_import.analyse_document(content, filename, subject, subject_data.get("exam_board", ""), subject_data.get("paper", ""), qualification=preferences.qualification())
             token = topics.save_draft(subject, filename, content, analysis)
             self.redirect("/subjects/review?draft=" + token)
         elif post and path in ("/subjects/accept-topics", "/subjects/cancel-import"):

@@ -142,10 +142,43 @@ Photosynthesis</pre>
         ],
     },
     {
+        "slug": "school-timetable", "title": "School timetables & daily plans", "category": "Plan & revise",
+        "summary": "Import a weekly or two-week school timetable, correct the lessons and use free periods for revision.",
+        "action": ("Open your daily plan", "/planner"), "related": ["planner", "revision", "exams"],
+        "sections": [
+            section("upload", "How to upload a school timetable", """
+                <ol><li>Open <a href="/planner">Planner</a> and expand <strong>Add your school timetable</strong>, or <strong>Upload a replacement timetable</strong>.</li>
+                <li>Choose the document and select <strong>Read timetable</strong>.</li><li>Keep the page open while OpenAI reads the schedule. This can take a minute or two.</li><li>Check the review screen before saving.</li></ol>
+                <p>Supported formats are PDF (1–12 unlocked pages), Word (.doc/.docx), Excel (.xls/.xlsx), CSV, text, Markdown, PNG, JPEG and WebP, up to 10 MB. For other formats, print or export to PDF. PDF or a clear image works best for visual tables; embedded images inside Word or Excel files may not be read.</p>
+                <p>The document is sent to OpenAI using the site owner's account. No saved timetable changes until you accept the review. Topic and timetable analysis share the site's daily document allowance.</p>"""),
+            section("review", "How to review and refine the timetable", """
+                <p>Read the note about missing or uncertain information. Open each weekday section and check the week, day, activity, period, times, type, room and teacher. Class codes are kept as printed so you can rename them yourself.</p>
+                <p>Untick <strong>Keep this entry</strong> to omit an item; use <strong>Add entry</strong> for anything missing. Choose <strong>Free period</strong> only when that time is available. Blank cells are not treated as free periods. If times are unknown, leave both empty: the activity still appears, but cannot yet be turned into revision.</p>
+                <p>Select <strong>Save school timetable</strong> to create the daily schedule in your space. A replacement changes the school timetable but keeps revision sessions already created. <strong>Discard this upload</strong> removes only the pending import.</p>
+                <p>Pending reviews appear in Planner for 24 hours. Unsaved form edits are not autosaved; the original extracted suggestions remain until you save or discard them.</p>"""),
+            section("weeks-and-holidays", "How to set Week A/B, term dates and holidays", """
+                <ol><li>Choose <strong>Every week</strong> or <strong>Every two weeks (A / B)</strong>.</li><li>For two weeks, choose a Monday known to be in Week A. Check any date suggested from the document.</li>
+                <li>Set <strong>Show timetable from</strong> and <strong>Show timetable until</strong> to the dates you need, up to one year.</li><li>Under <strong>Holidays and days off</strong>, enter dates to skip.</li></ol>
+                <p>Enter one date per line, such as <strong>2026-10-26</strong>, or an inclusive range such as <strong>2026-10-26..2026-10-30</strong>. Weekends only contain school activities if you added them.</p>
+                <p>A/B weeks alternate by calendar week even across holidays. If your school's rotation differs after a holiday, use Edit timetable to adjust the Week A Monday. The daily view and calendar use the saved pattern immediately.</p>"""),
+            section("daily-plan", "How to use your daily plan", """
+                <p>Planner opens on today. Use <strong>Previous day</strong>, <strong>Next day</strong> or the date field and <strong>Show day</strong> to see another day. <strong>Today</strong> returns to the current date; <strong>Print day</strong> prints the visible daily plan.</p>
+                <p>The list combines lessons, free periods and revision sessions. School entries also appear on the Revision calendar; select one to open its day in Planner. School lessons do not count as completed revision or topic hours.</p>
+                <p>Choose <strong>Edit timetable</strong> to change the weekly pattern later. <strong>View original document</strong> opens the saved source for checking. When analysis is unavailable, <strong>Enter a timetable manually</strong> opens the same editor without an upload.</p>"""),
+            section("free-periods", "How to turn a free period into revision", """
+                <ol><li>Find the date you want in Planner.</li><li>Beside a free period with times, select <strong>Use for revision</strong>.</li><li>On Revision, turn on <strong>Edit mode</strong> and open the new <strong>Free period revision</strong> slot.</li><li>Choose a subject and topics and save the slot.</li></ol>
+                <p>This adds a session for that date only. Existing sessions are preserved. The same period is not added twice, and overlapping revision is blocked. If revision already occupies the time, use <strong>View planned revision</strong>.</p>
+                <p>Changing the school timetable later does not move or remove previously created revision sessions. Complete the session after studying to record topic hours.</p>"""),
+        ],
+    },
+    {
         "slug": "planner", "title": "Planner & day plans", "category": "Plan & revise",
         "summary": "Create daily time blocks and populate them onto the dates you want to study.",
-        "action": ("Open Planner", "/planner"), "related": ["revision", "getting-started", "troubleshooting"],
+        "action": ("Open Planner", "/planner"), "related": ["school-timetable", "revision", "getting-started", "troubleshooting"],
         "sections": [
+            section("school-days", "School timetable and daily view", """
+                <p>Use <strong>Add your school timetable</strong> at the top of Planner to import a one-week or alternating two-week school schedule. After checking and saving it, Planner shows each day's lessons, free periods and revision sessions.</p>
+                <p>See <a href="/help/school-timetable">School timetables &amp; daily plans</a> for uploading, correcting Week A/B, holidays and using free periods for revision. The Day plan table below is still available for your own reusable study blocks.</p>"""),
             section("day-plan", "How to create a day plan entry", """
                 <ol><li>Open <a href="/planner">Planner</a> and select the <strong>+</strong> button at the bottom of the Day plan table.</li>
                 <li>Give the entry a name, such as Session 1 or After school.</li><li>Enter start and end times in 24-hour format, for example <strong>16:00</strong> and <strong>16:45</strong>. Use an end time later than the start time on the same day.</li>
@@ -212,10 +245,14 @@ Photosynthesis</pre>
         ],
     },
     {
-        "slug": "exams", "title": "Exams & timetable settings", "category": "Exam preparation",
+        "slug": "exams", "title": "Study settings & exam timetables", "category": "Exam preparation",
         "summary": "Upload a school timetable, check exam dates and create subjects from the results.",
         "action": ("Open timetable Settings", "/settings"), "related": ["subjects", "revision", "troubleshooting"],
         "sections": [
+            section("qualification", "How to choose GCSE or A-level", """
+                <ol><li>Open <a href="/settings">Settings</a>.</li><li>Under <strong>Your studies</strong>, choose <strong>GCSE</strong> or <strong>A-level</strong>.</li><li>Select <strong>Save study settings</strong>.</li></ol>
+                <p>The choice belongs to your account and appears on your home page. New document topic suggestions use your chosen level. Existing accounts start with GCSE; changing level keeps all subjects, topics and revision progress, and does not rewrite topics already saved.</p>
+                <p>School lesson timetables belong in <a href="/planner">Planner</a>. The exam timetable upload below is for dated examinations.</p>"""),
             section("upload-timetable", "How to upload your exam timetable", """
                 <ol><li>Open <a href="/settings">Settings</a>.</li><li>Choose your school exam timetable as a <strong>PDF file</strong>.</li>
                 <li>Select <strong>Upload timetable</strong>.</li><li>Use <strong>Open uploaded timetable</strong> to view the source, then open <a href="/exams">Exams</a> to check what was extracted.</li></ol>

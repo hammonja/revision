@@ -21,6 +21,9 @@ from accounts import user_dir, user_file, atomic_json
 from web_accounts import AccountHandlerMixin
 import topics
 import help_guides
+import preferences
+import school_timetable as school
+import timetable_views
 
 HOST = os.environ.get("HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT", "3000"))
@@ -1294,9 +1297,10 @@ def render_home():
     content = f"""
     <section class="panel">
         <h1>Hello, {escape(user['display_name'])}</h1>
+        <p>{escape(preferences.qualification())} revision · <a href="/settings#study-settings">Study settings</a></p>
         <p>Your revision starts here. You have {len(subjects)} subjects and {topic_count} topics in your space.</p>
         <p>Add a subject, find topics in a document or write your own, then plan when to revise them.</p>
-        <div class="home-actions"><a href="/subjects">Manage your subjects</a><a href="/revision">Your revision timetable</a><a href="/planner">Plan your revision</a></div>
+        <div class="home-actions"><a href="/subjects">Manage your subjects</a><a href="/revision">Your revision timetable</a><a href="/planner">Your daily plan</a></div>
     </section>
     """
     return render_layout(user["display_name"] + "'s revision", "home", content)
@@ -1411,6 +1415,7 @@ def render_exams(query):
 
 
 def render_revision(query):
+    school_schedule = school.load()
     slots = load_revision_slots()
     exams = load_exams().get("exams", [])
     subjects = load_subjects()
@@ -1490,6 +1495,7 @@ def render_revision(query):
 
             slot_cards = []
             if day in active_dates:
+                slot_cards.append(timetable_views.calendar_cards(school_schedule, day))
                 for exam in exams_by_date.get(day, []):
                     subject = str(exam.get("subject", ""))
                     colour = subject_colours.get(subject.casefold(), COLOURS[-1][1])
@@ -1570,7 +1576,7 @@ def render_revision(query):
         name = str(subject.get("name", ""))
         subject_options.append(f'<option value="{escape(name, quote=True)}">{escape(name)}</option>')
 
-    if dated_slots:
+    if dated_slots or school_schedule:
         calendar_html = f"""
         <div class="calendar-header">
             <a class="month-button" href="{previous_href}" aria-label="Previous">&lt;</a>
@@ -1859,7 +1865,7 @@ def render_revision(query):
         </section>
         """
 
-    return render_layout("Revision", "revision", calendar_html, wide=True, body_attrs=' data-calendar-page="revision"')
+    return render_layout("Revision", "revision", timetable_views.CSS + calendar_html, wide=True, body_attrs=' data-calendar-page="revision"')
 
 
 def render_settings():
@@ -2542,7 +2548,7 @@ def render_subjects():
     return render_layout("Subjects", "subjects", content)
 
 
-def render_planner():
+def render_planner(query=None):
     subjects = load_subjects()
     day_plan = load_day_plan()
     used_colours_json = script_json(sorted(used_colours(subjects, day_plan)))
@@ -2573,9 +2579,10 @@ def render_planner():
         )
 
     content = f"""
-    <section class="settings-grid">
+    {timetable_views.render_panel(sys.modules[__name__], query)}
+    <section class="settings-grid generic-day-plan">
         <div class="panel full-width">
-            <h1>Day plan</h1>
+            <h2>Day plan</h2>
             <p>Define the shape of the day. Use auto colour for revision sessions that will later inherit the subject colour.</p>
             <div class="table-toolbar"><button class="secondary-button" type="button" id="populateDayPlanButton">Populate</button></div>
             <div class="table-wrap">
@@ -2658,7 +2665,7 @@ def render_planner():
     return render_layout("Planner", "planner", content)
 
 
-def render_settings_page():
+def render_settings_page(query=None):
     exams_data = load_exams()
     source_file = exams_data.get("source_file")
     if source_file:
@@ -2676,9 +2683,11 @@ def render_settings_page():
 
     content = f"""
     <section class="settings-grid">
+        {('<p class="notice" role="status">Study settings saved.</p>' if (query or {}).get('saved') == ['studies'] else '')}
+        {preferences.render_settings()}
         <div class="panel full-width">
-            <h1>Exam timetable</h1>
-            <p>Upload the school PDF timetable and it will be stored and parsed for the app.</p>
+            <h2>Exam timetable</h2>
+            <p>Upload the school exam PDF timetable and it will be stored and parsed for the app.</p>
             <form method="post" action="/settings/upload-exams" enctype="multipart/form-data">
                 <label>PDF file<input type="file" name="exam_file" accept="application/pdf,.pdf" required></label>
                 <button type="submit">Upload timetable</button>
@@ -2704,9 +2713,9 @@ class LegacyRevisionHandler(BaseHTTPRequestHandler):
         elif path == "/subjects":
             self.send_html(render_subjects())
         elif path == "/planner":
-            self.send_html(render_planner())
+            self.send_html(render_planner(parse_qs(parsed_url.query)))
         elif path == "/settings":
-            self.send_html(render_settings_page())
+            self.send_html(render_settings_page(parse_qs(parsed_url.query)))
         elif path.startswith("/uploads/"):
             self.send_upload(path)
         elif path.startswith("/content/"):
