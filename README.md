@@ -85,12 +85,18 @@ omitting entries. Missing times remain blank, blank cells are not assumed to be 
 unknown class codes remain editable. Check the Week A Monday, term dates and holiday exclusions
 before saving. Two-week cycles alternate by calendar week, including holidays.
 
-Planner then shows today's school activities and existing revision sessions, with date navigation
-and a print view. School activities also appear on the Revision calendar without affecting topic
-progress. **Use for revision** turns one dated free period into an editable revision slot; duplicate
-or overlapping sessions are prevented. Timetable changes preserve existing revision sessions.
+Planner and the Revision calendar show the same sessions, with daily navigation and a print view.
+Click a free period or day-plan session to assign subjects and topics using the normal editor.
+Assigned sessions offer **Edit session** and **Complete**; only school lessons have a fixed subject
+and are excluded from revision progress. Colour does not determine whether a session is editable.
+**Delete session** removes one dated occurrence, with **Undo deletion** available afterwards.
+Deleted school occurrences stay deleted on refresh. Timetable edits preserve personal assignments
+and completed work; completed sessions retain their recorded duration. Legacy revision sessions
+at exactly the same date and times as a free period are adopted to avoid duplicate cards.
 
 Schedules live in each account's `school_timetable.json`; the qualification is in `preferences.json`.
+Personal session state and deletion records live in `revision_slots.json`, linked to stable school
+entry IDs. Session changes use account-scoped record references to reject stale forms safely.
 Uploads remain private drafts for 24 hours until accepted or discarded. Saved source documents
 are account-scoped uploads. Concurrent edits are rejected when based on an outdated timetable.
 Timetable and topic analysis share the existing account/site API budgets and configuration.

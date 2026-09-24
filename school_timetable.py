@@ -83,7 +83,7 @@ def form_values(form):
     if not 0 <= count <= MAX_ENTRIES:
         raise ValueError(f"Use at most {MAX_ENTRIES} timetable entries.")
     result = {key: value(key) for key in ("cycle_weeks", "anchor_monday", "start_date", "end_date", "excluded_dates")}
-    result["entries"] = [{key: value(f"{key}_{i}") for key in FIELDS}
+    result["entries"] = [{**{key: value(f"{key}_{i}") for key in FIELDS}, "id": value(f"entry_id_{i}")}
                          for i in range(count) if value(f"keep_{i}") == "1"]
     return result
 
@@ -108,6 +108,9 @@ def validate(values):
     entries = []
     for n, original in enumerate(result["entries"], 1):
         entry = {key: str(original.get(key, "")).strip() for key in FIELDS}
+        entry["id"] = str(original.get("id", ""))
+        if entry["id"] and not re.fullmatch(r"[a-f0-9]{32}", entry["id"]):
+            raise ValueError("Reload the timetable editor before saving these entries.")
         if entry["week"] not in ("1", "2") or int(entry["week"]) > result["cycle_weeks"]:
             raise ValueError(f"Entry {n}: move Week B entries to Week A or choose a two-week timetable.")
         if entry["weekday"] not in tuple(str(i) for i in range(7)):
@@ -173,9 +176,19 @@ def check_version(version):
 
 
 def save(values, version, draft_token=""):
+    from revision_sessions import template_id
     schedule = validate(values)
     check_version(version)
     previous = load()
+    previous_entries = {template_id(entry, i): entry for i, entry in enumerate(previous.get("entries", []))}
+    seen = set()
+    for entry in schedule["entries"]:
+        entry_id = entry["id"]
+        if entry_id and (entry_id not in previous_entries or entry_id in seen):
+            raise ValueError("Reload the timetable editor before saving these entries.")
+        same_kind = entry_id and previous_entries[entry_id]["kind"] == entry["kind"]
+        entry["id"] = entry_id if same_kind else uuid.uuid4().hex
+        seen.add(entry["id"])
     source_file, source_name = previous.get("source_file", ""), previous.get("source_name", "")
     if draft_token:
         draft = get_draft(draft_token)
@@ -206,6 +219,8 @@ def entries_on(schedule, day):
 
 
 def add_revision(app, day_text, index, version):
+    # Support a previously opened Planner page without making a duplicate session.
+    import revision_sessions as sessions
     check_version(version)
     schedule = load()
     day = read_date(day_text)
@@ -213,17 +228,8 @@ def add_revision(app, day_text, index, version):
     entry = available.get(int(index))
     if not entry or entry["kind"] != "free" or not entry["start_time"] or not entry["end_time"]:
         raise ValueError("Choose a free period with start and end times on an active school day.")
-    # Do not duplicate a period, or overlap revision already planned by the user.
-    slots = app.load_revision_slots()
-    for slot in slots:
-        if slot.get("date") != day_text:
-            continue
-        start, end = slot.get("start_time", ""), slot.get("end_time", "")
-        if (start, end) == (entry["start_time"], entry["end_time"]):
-            return False
-        if start and end and start < entry["end_time"] and end > entry["start_time"]:
-            raise ValueError("You already have revision overlapping this free period. Check your calendar first.")
-    slots.append({"date": day_text, "title": "Free period revision", "start_time": entry["start_time"],
-                  "end_time": entry["end_time"], "colour": "auto", "subject": "", "topics": [], "completed": False})
-    app.save_revision_slots(slots)
-    return True
+    key = day_text + ":" + sessions.template_id(entry, int(index))
+    for slot in app.load_revision_slots():
+        if slot.get("school_occurrence") == key:
+            return sessions.reference(slot)
+    raise ValueError("This free period has been deleted. Reload your calendar.")

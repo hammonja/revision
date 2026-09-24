@@ -24,6 +24,7 @@ import help_guides
 import preferences
 import school_timetable as school
 import timetable_views
+import revision_sessions as sessions
 
 HOST = os.environ.get("HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT", "3000"))
@@ -90,20 +91,12 @@ def save_day_plan(day_plan):
 
 
 def load_revision_slots():
-    if not user_file("revision_slots.json").exists():
-        return []
-
-    try:
-        with user_file("revision_slots.json").open("r", encoding="utf-8") as file:
-            slots = json.load(file)
-    except (json.JSONDecodeError, OSError):
-        return []
-
-    return slots if isinstance(slots, list) else []
+    return sessions.load()
 
 
 def save_revision_slots(slots):
-    atomic_json(user_file("revision_slots.json"), slots)
+    sessions.save(slots)
+
 
 
 def load_active_topics():
@@ -1480,6 +1473,8 @@ def render_revision(query):
     for slot_date, index, slot in dated_slots:
         if slot_date in active_dates:
             slots_by_date.setdefault(slot_date, []).append((index, slot))
+    for daily_slots in slots_by_date.values():
+        daily_slots.sort(key=lambda item: (item[1].get("start_time") or "99", item[1].get("title", "")))
     exams_by_date = {}
     for exam_date, exam in dated_exams:
         if exam_date in active_dates:
@@ -1495,7 +1490,6 @@ def render_revision(query):
 
             slot_cards = []
             if day in active_dates:
-                slot_cards.append(timetable_views.calendar_cards(school_schedule, day))
                 for exam in exams_by_date.get(day, []):
                     subject = str(exam.get("subject", ""))
                     colour = subject_colours.get(subject.casefold(), COLOURS[-1][1])
@@ -1512,6 +1506,7 @@ def render_revision(query):
                         """
                     )
                 for slot_index, slot in slots_by_date.get(day, []):
+                    fixed = bool(slot.get("fixed"))
                     slot_name = str(slot.get("title", ""))
                     start_time = escape(str(slot.get("start_time", "")))
                     end_time = escape(str(slot.get("end_time", "")))
@@ -1530,8 +1525,10 @@ def render_revision(query):
                     else:
                         display_colour = colour
                     slot_title = subject or slot_name
-                    detail = slot_name if subject else "Choose subject"
+                    detail = " · ".join(filter(None, ["School lesson", slot.get("room"), slot.get("teacher")])) if fixed else (slot_name if subject else "Choose subject")
                     topic_label = "Complete" if completed else (f"{topic_count} topic{'s' if topic_count != 1 else ''}" if topic_count else "No topics")
+                    if fixed:
+                        topic_label = "Fixed lesson"
                     safe_topics = script_json(topics if isinstance(topics, list) else [])
                     card_class = "exam-card completed" if completed else "exam-card"
                     card = (
@@ -1546,8 +1543,8 @@ def render_revision(query):
                     )
                     slot_cards.append(
                         f"""
-                        <button class="slot-button revision-slot" type="button"
-                            data-index="{slot_index}"
+                        <button class="slot-button revision-slot{' fixed-lesson' if fixed else ''}" type="button"
+                            data-ref="{sessions.reference(slot)}"
                             data-title="{escape(slot_name, quote=True)}"
                             data-date="{day.isoformat()}"
                             data-subject="{escape(subject, quote=True)}"
@@ -1555,7 +1552,7 @@ def render_revision(query):
                             data-start-time="{start_time}"
                             data-end-time="{end_time}"
                             data-topics="{escape(safe_topics, quote=True)}"
-                            data-auto="{'true' if colour == 'auto' else 'false'}"
+                            data-fixed="{'true' if fixed else 'false'}"
                             data-completed="{'true' if completed else 'false'}">
                             {card}
                         </button>
@@ -1611,7 +1608,7 @@ def render_revision(query):
                     </button>
                 </div>
                 <form method="post" action="/revision/slot" id="slotForm">
-                    <input type="hidden" name="index" id="slotIndex">
+                    <input type="hidden" name="session_ref" id="slotIndex">
                     <label>
                         Subject
                         <select name="subject" id="slotSubject" required>
@@ -1632,8 +1629,9 @@ def render_revision(query):
                         <button class="add-row-button" type="button" id="addTopicButton" aria-label="Add topic">+</button>
                     </fieldset>
                 <div class="modal-actions">
-                        <button class="ghost-button" type="submit" formaction="/revision/slot/uncomplete">Uncomplete</button>
-                        <button class="ghost-button" type="submit" formaction="/revision/slot/clear">Clear</button>
+                        <button class="ghost-button" type="submit" formaction="/revision/slot/uncomplete" formnovalidate>Uncomplete</button>
+                        <button class="ghost-button" type="submit" formaction="/revision/slot/clear" formnovalidate>Clear</button>
+                        <button class="ghost-button delete-session" type="submit" formaction="/revision/slot/delete" formnovalidate>Delete session</button>
                         <button class="ghost-button" type="button" id="cancelSlotModal">Cancel</button>
                         <button type="submit">Save slot</button>
                     </div>
@@ -1655,9 +1653,11 @@ def render_revision(query):
                 <a class="file-link" id="slotViewContentLink" href="#" target="_blank" rel="noopener">view content</a>
                 <div id="slotViewTopics" class="empty-state">No topics added yet.</div>
                 <form method="post" action="/revision/slot/complete" id="slotCompleteForm">
-                    <input type="hidden" name="index" id="slotCompleteIndex">
+                    <input type="hidden" name="session_ref" id="slotCompleteIndex">
                     <div class="modal-actions">
                         <button class="ghost-button" type="button" id="cancelSlotViewModal">Close</button>
+                        <button class="ghost-button" type="button" id="editViewedSession">Edit session</button>
+                        <button class="ghost-button delete-session" type="submit" formaction="/revision/slot/delete" formnovalidate>Delete session</button>
                         <button type="submit" id="completeSlotButton">Complete</button>
                     </div>
                 </form>
@@ -1677,6 +1677,7 @@ def render_revision(query):
             const slotViewContentLink = document.getElementById("slotViewContentLink");
             const slotCompleteIndex = document.getElementById("slotCompleteIndex");
             const completeSlotButton = document.getElementById("completeSlotButton");
+            let selectedSlotButton = null;
             const subjectTopics = {content_topics_json};
             const revisedTopics = {revised_topics_json};
 
@@ -1753,7 +1754,8 @@ def render_revision(query):
 
             function openSlotModal(button) {{
                 const topics = JSON.parse(button.dataset.topics || "[]");
-                slotIndex.value = button.dataset.index;
+                selectedSlotButton = button;
+                slotIndex.value = button.dataset.ref;
                 slotSubject.value = button.dataset.subject || "";
                 slotTitle.textContent = `${{button.dataset.title}} - ${{button.dataset.date}}`;
                 topicRows.innerHTML = "";
@@ -1784,7 +1786,11 @@ def render_revision(query):
                     slotViewContentLink.removeAttribute("href");
                     slotViewContentLink.style.display = "none";
                 }}
-                slotCompleteIndex.value = button.dataset.index;
+                selectedSlotButton = button;
+                slotCompleteIndex.value = button.dataset.ref;
+                const fixed = button.dataset.fixed === "true";
+                completeSlotButton.hidden = fixed;
+                document.getElementById("editViewedSession").hidden = fixed;
                 completeSlotButton.disabled = button.dataset.completed === "true";
                 completeSlotButton.textContent = button.dataset.completed === "true" ? "Completed" : "Complete";
 
@@ -1808,7 +1814,7 @@ def render_revision(query):
                     slotViewTopics.appendChild(panel);
                 }} else {{
                     slotViewTopics.className = "empty-state";
-                    slotViewTopics.textContent = "No topics added yet.";
+                    slotViewTopics.textContent = fixed ? "This is a fixed school lesson. Change its subject or time in Planner → Edit timetable. Deleting removes this date only." : "No topics added yet.";
                 }}
 
                 slotViewModal.classList.add("open");
@@ -1822,7 +1828,7 @@ def render_revision(query):
 
             document.querySelectorAll(".revision-slot").forEach((button) => {{
                 button.addEventListener("click", () => {{
-                    if (editModeToggle.checked && button.dataset.auto === "true") {{
+                    if (button.dataset.fixed !== "true" && (editModeToggle.checked || !button.dataset.subject)) {{
                         openSlotModal(button);
                     }} else {{
                         openSlotViewModal(button);
@@ -1833,7 +1839,15 @@ def render_revision(query):
             editModeToggle.addEventListener("change", () => {{
                 localStorage.setItem("revisionEditMode", editModeToggle.checked ? "true" : "false");
             }});
-            slotSubject.addEventListener("change", refreshTopicDropdowns);
+            document.getElementById("editViewedSession").addEventListener("click", () => {{
+                closeSlotViewModal(); openSlotModal(selectedSlotButton);
+            }});
+            const requestedSession = new URLSearchParams(window.location.search).get("session");
+            if (requestedSession) {{
+                const target = Array.from(document.querySelectorAll(".revision-slot")).find(button => button.dataset.ref === requestedSession);
+                if (target) target.click();
+            }}
+            slotSubject.addEventListener("change", () => {{ topicRows.innerHTML = ""; addTopicRow(); }});
             document.getElementById("addTopicButton").addEventListener("click", () => addTopicRow());
             document.getElementById("closeSlotModal").addEventListener("click", closeSlotModal);
             document.getElementById("cancelSlotModal").addEventListener("click", closeSlotModal);
@@ -1865,7 +1879,7 @@ def render_revision(query):
         </section>
         """
 
-    return render_layout("Revision", "revision", timetable_views.CSS + calendar_html, wide=True, body_attrs=' data-calendar-page="revision"')
+    return render_layout("Revision", "revision", timetable_views.CSS + sessions.deletion_notice(query) + calendar_html, wide=True, body_attrs=' data-calendar-page="revision"')
 
 
 def render_settings():
@@ -2751,22 +2765,6 @@ class LegacyRevisionHandler(BaseHTTPRequestHandler):
             form = parse_qs(body.decode("utf-8"))
             self.populate_revision_slots(form)
             self.redirect("/revision")
-        elif path == "/revision/slot":
-            form = parse_qs(body.decode("utf-8"))
-            self.save_revision_slot(form)
-            self.redirect_back_to_revision()
-        elif path == "/revision/slot/complete":
-            form = parse_qs(body.decode("utf-8"))
-            self.complete_revision_slot(form)
-            self.redirect_back_to_revision()
-        elif path == "/revision/slot/uncomplete":
-            form = parse_qs(body.decode("utf-8"))
-            self.uncomplete_revision_slot(form)
-            self.redirect_back_to_revision()
-        elif path == "/revision/slot/clear":
-            form = parse_qs(body.decode("utf-8"))
-            self.clear_revision_slot(form)
-            self.redirect_back_to_revision()
         elif path == "/settings/upload-exams":
             self.upload_exam_timetable(body)
             self.redirect("/settings")
@@ -2976,68 +2974,6 @@ class LegacyRevisionHandler(BaseHTTPRequestHandler):
                     existing.add(key)
             current += timedelta(days=1)
 
-        save_revision_slots(slots)
-
-    def save_revision_slot(self, form):
-        try:
-            index = int(form.get("index", [""])[0])
-        except ValueError:
-            return
-
-        slots = load_revision_slots()
-        if not 0 <= index < len(slots):
-            return
-
-        subject = form.get("subject", [""])[0].strip()
-        valid_subjects = {str(item.get("name", "")) for item in load_subjects()}
-        if subject not in valid_subjects:
-            return
-
-        topics = [topic.strip() for topic in form.get("topic", []) if topic.strip()]
-        slots[index]["subject"] = subject
-        slots[index]["topics"] = topics
-        slots[index]["completed"] = False
-        save_revision_slots(slots)
-
-    def complete_revision_slot(self, form):
-        try:
-            index = int(form.get("index", [""])[0])
-        except ValueError:
-            return
-
-        slots = load_revision_slots()
-        if not 0 <= index < len(slots):
-            return
-
-        slots[index]["completed"] = True
-        save_revision_slots(slots)
-
-    def uncomplete_revision_slot(self, form):
-        try:
-            index = int(form.get("index", [""])[0])
-        except ValueError:
-            return
-
-        slots = load_revision_slots()
-        if not 0 <= index < len(slots):
-            return
-
-        slots[index]["completed"] = False
-        save_revision_slots(slots)
-
-    def clear_revision_slot(self, form):
-        try:
-            index = int(form.get("index", [""])[0])
-        except ValueError:
-            return
-
-        slots = load_revision_slots()
-        if not 0 <= index < len(slots):
-            return
-
-        slots[index]["subject"] = ""
-        slots[index]["topics"] = []
-        slots[index]["completed"] = False
         save_revision_slots(slots)
 
     def upload_exam_timetable(self, body):

@@ -7,6 +7,7 @@ from urllib.parse import quote
 import school_timetable as school
 import timetable_import
 import topic_import
+import revision_sessions as sessions
 
 CSS = '''<style>
 .school-panel {margin-bottom:24px}.school-panel h2 {margin-top:0}
@@ -30,6 +31,8 @@ CSS = '''<style>
 .school-review .review-error {scroll-margin-top:24px}.school-week-label {font-weight:700;color:#31596b}
 .school-calendar-card {display:block;text-decoration:none;border-left-color:#58788b!important;background:#f0f5f8!important;color:var(--ink)!important}
 .school-calendar-card .exam-detail {color:var(--muted)}
+.session-deleted {display:flex;align-items:center;gap:16px;margin-bottom:20px}.session-deleted form{margin:0}
+.delete-session {color:#9b2929!important}.fixed-lesson .exam-card{background:#eef3f7}
 @media(max-width:680px){.school-review .review-settings,.school-entry-grid{grid-template-columns:1fr 1fr}.school-event{grid-template-columns:1fr}.school-entry .entry-title{grid-column:span 2}}
 @media print{.topbar,.page-help,.school-actions,.school-date-form,.school-import,.school-event form,.generic-day-plan{display:none!important}.school-event{break-inside:avoid}.school-panel{box-shadow:none}}
 </style>'''
@@ -45,6 +48,7 @@ def entry_html(index, entry):
     def select_field(key, label, items):
         return f'<label>{label}<select name="{key}_{index}">{options(items, entry.get(key, ""))}</select></label>'
     return f'''<div class="school-entry">
+      <input type="hidden" name="entry_id_{index}" value="{escape(str(entry.get('id', '')), quote=True)}">
       <label class="keep-entry"><input type="checkbox" name="keep_{index}" value="1" checked> Keep this entry</label>
       <div class="school-entry-grid">
       {select_field("week", "Week", [(1, "Week A / only week"), (2, "Week B")])}
@@ -60,6 +64,8 @@ def render_review(app, values, version="", token="", note="", error=""):
     entries = values.get("entries", [])
     groups = {}
     for i, entry in enumerate(entries):
+        if not token and "id" not in entry:
+            entry = dict(entry, id=sessions.template_id(entry, i))
         groups.setdefault((str(entry.get("week", 1)), str(entry.get("weekday", 0))), []).append((i, entry))
     rows = []
     for n, ((week, day), group) in enumerate(sorted(groups.items())):
@@ -152,7 +158,7 @@ def render_panel(app, query=None):
     }});window.addEventListener('pageshow', event => {{if(event.persisted) {{document.querySelector('#schoolUploadForm button').disabled = {str(bool(disabled)).lower()};document.getElementById('schoolUploadStatus').textContent='';}}}});</script>'''
     source = f'<a href="/uploads/{quote(schedule["source_file"])}" target="_blank" rel="noopener">View original document</a>' if schedule.get("source_file") else ""
     actions = f'<div class="school-actions"><a href="/planner/timetable/edit">{"Edit timetable" if schedule else "Enter a timetable manually"}</a>{source}<a href="/help/school-timetable">Timetable help</a></div>'
-    daily_html = render_day(app, schedule, day) if schedule else '<p>Your daily school plan will appear here once you save a timetable.</p>'
+    daily_html = render_day(app, schedule, day)
     return CSS + f'''<section class="panel school-panel"><h1>Planner</h1>{message}
       {daily_html}{actions}{pending_html}{import_html}</section>'''
 
@@ -160,27 +166,16 @@ def render_panel(app, query=None):
 def render_day(app, schedule, day):
     revision = [slot for slot in app.load_revision_slots() if slot.get("date") == day.isoformat()]
     events = []
-    for index, entry in school.entries_on(schedule, day):
-        clock = f'{entry["start_time"]} – {entry["end_time"]}' if entry["start_time"] else "Time not set"
-        meta = " · ".join(value for value in (entry["period"], entry["room"], entry["teacher"]) if value)
-        action = ""
-        if entry["kind"] == "free" and entry["start_time"]:
-            used = any(slot.get("start_time", "") < entry["end_time"] and slot.get("end_time", "") > entry["start_time"] for slot in revision)
-            if used:
-                action = f'<a href="/revision?view=week&amp;date={day.isoformat()}">View planned revision</a>'
-            else:
-                action = f'''<form method="post" action="/planner/timetable/use-free-period">
-                  <input type="hidden" name="date" value="{day.isoformat()}"><input type="hidden" name="index" value="{index}">
-                  <input type="hidden" name="version" value="{schedule['version']}"><button type="submit">Use for revision</button></form>'''
-        events.append((entry["start_time"] or "99", f'''<li class="school-event {entry['kind']}"><div><strong>{escape(clock)}</strong><p>{escape(school.KINDS[entry['kind']])}</p></div><div><h3>{escape(entry['title'])}</h3><p>{escape(meta)}</p></div>{action}</li>'''))
     for slot in revision:
         topics = slot.get("topics", [])
         title = slot.get("subject") or slot.get("title") or "Revision"
-        meta = ("Completed · " if slot.get("completed") else "Revision · ") + ", ".join(topics)
-        clock = slot.get("start_time", "") + " – " + slot.get("end_time", "")
-        events.append((slot.get("start_time") or "99", f'''<li class="school-event revision"><strong>{escape(clock)}</strong><div><h3>{escape(title)}</h3><p>{escape(meta)}</p></div><a href="/revision?view=week&amp;date={day.isoformat()}">Open session</a></li>'''))
-    pattern = "Weekly timetable" if schedule["cycle_weeks"] == 1 else f'Week {"A" if school.week_number(schedule, day) == 1 else "B"}'
-    if not schedule["start_date"] <= day.isoformat() <= schedule["end_date"]:
+        fixed = slot.get("fixed")
+        kind = "lesson" if fixed else ("revision" if slot.get("subject") else "free")
+        meta = " · ".join(filter(None, ["Fixed lesson", slot.get("period"), slot.get("room"), slot.get("teacher")])) if fixed else (("Completed · " if slot.get("completed") else "Revision · ") + ", ".join(topics))
+        clock = slot.get("start_time", "") + " – " + slot.get("end_time", "") if slot.get("start_time") else "Time not set"
+        events.append((slot.get("start_time") or "99", f'''<li class="school-event {kind}"><strong>{escape(clock)}</strong><div><h3>{escape(title)}</h3><p>{escape(meta)}</p></div><a href="/revision?view=week&amp;date={day.isoformat()}&amp;session={sessions.reference(slot)}">Open session</a></li>'''))
+    pattern = "Daily plan" if not schedule else "Weekly timetable" if schedule["cycle_weeks"] == 1 else f'Week {"A" if school.week_number(schedule, day) == 1 else "B"}'
+    if schedule and not schedule["start_date"] <= day.isoformat() <= schedule["end_date"]:
         pattern += " · outside timetable dates"
     elif day.isoformat() in schedule.get("excluded", []):
         pattern += " · day off"
@@ -188,10 +183,3 @@ def render_day(app, schedule, day):
     return f'''<h2>{escape(day.strftime('%A, %d %B %Y'))}</h2><p class="school-week-label">{pattern}</p>
       <div class="school-actions"><a href="/planner?date={(day-timedelta(days=1)).isoformat()}">Previous day</a><a href="/planner">Today</a><a href="/planner?date={(day+timedelta(days=1)).isoformat()}">Next day</a><button type="button" class="ghost-button" onclick="window.print()">Print day</button></div>
       <form method="get" action="/planner" class="school-date-form"><label>Show date<input type="date" name="date" value="{day.isoformat()}" required></label><button type="submit" class="secondary-button">Show day</button></form>{items}'''
-
-
-def calendar_cards(schedule, day):
-    return "".join(f'''<a class="exam-card school-calendar-card" href="/planner?date={day.isoformat()}">
-      <span class="exam-subject">{escape(entry['title'])}</span>
-      <span class="exam-detail">School · {escape(entry['start_time'] + ' – ' + entry['end_time'] if entry['start_time'] else entry['period'] or 'Time not set')}</span>
-      </a>''' for _, entry in school.entries_on(schedule, day))

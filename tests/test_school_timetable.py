@@ -56,7 +56,7 @@ class SchoolTests(unittest.TestCase):
         self.assertEqual(self.client.request("/settings/studies", {"qualification":"A-level"})[0], 303)
         with self.as_user():
             self.assertEqual(preferences.qualification(), "A-level")
-            self.assertEqual(app.load_revision_slots(), self.slots)
+            self.assertEqual([slot for slot in app.load_revision_slots() if not slot.get("school_occurrence")], self.slots)
         with patch.object(topic_import, "analyse_document", return_value={"topics":[],"note":""}) as api:
             self.client.request("/subjects/upload-document", {"subject":"Maths"}, ("document","topics.txt",b"Calculus"))
             self.assertEqual(api.call_args.kwargs["qualification"], "A-level")
@@ -88,7 +88,7 @@ class SchoolTests(unittest.TestCase):
             self.assertEqual(len(schedule["entries"]), 2)
             self.assertEqual(schedule["entries"][0]["title"], "Study time")
             self.assertEqual(schedule["entries"][1]["title"], "A-level Physics")
-            self.assertEqual(app.load_revision_slots(), self.slots)
+            self.assertEqual([slot for slot in app.load_revision_slots() if not slot.get("school_occurrence")], self.slots)
         self.assertEqual(self.client.request("/uploads/"+schedule["source_file"])[2], b"My private school timetable")
         day = self.client.request("/planner?date=2026-09-28")[2]
         self.assertIn(b"Week B", day)
@@ -150,21 +150,19 @@ class SchoolTests(unittest.TestCase):
         with self.as_user():
             self.assertEqual(school.load(),original)
 
-    def test_free_period_creates_only_one_revision_slot_and_respects_conflicts(self):
+    def test_old_use_free_period_link_opens_existing_session_without_duplication(self):
         self.client.login()
         self.client.request("/planner/timetable/save",form())
         with self.as_user():
             schedule = school.load()
+            before = app.load_revision_slots()
         fields = dict(date="2026-09-21",index="0",version=schedule["version"])
         for _ in range(2):
-            self.assertEqual(self.client.request("/planner/timetable/use-free-period",fields)[0],303)
+            status, headers, _ = self.client.request("/planner/timetable/use-free-period", fields)
+            self.assertEqual(status,303)
+            self.assertIn("&session=",headers["Location"])
         with self.as_user():
-            slots = app.load_revision_slots()
-            self.assertEqual(len(slots),len(self.slots)+1)
-            self.assertEqual(slots[0],self.slots[0])
-            slots[-1]["start_time"] = "09:30"
-            app.save_revision_slots(slots)
-        self.assertEqual(self.client.request("/planner/timetable/use-free-period",fields)[0],400)
+            self.assertEqual(app.load_revision_slots(),before)
         for day in ("2026-09-28","2026-10-26","2026-09-26","2027-01-04"):
             self.assertEqual(self.client.request("/planner/timetable/use-free-period",dict(fields,date=day))[0],400)
         self.assertEqual(self.client.request("/planner/timetable/use-free-period",dict(fields,version="old"))[0],400)
@@ -179,7 +177,7 @@ class SchoolTests(unittest.TestCase):
         self.assertEqual(self.client.request("/planner/timetable/save",form(version=version,draft=token))[0],400)
         with self.as_user():
             self.assertEqual(school.load()["entries"][0]["title"],"Changed")
-            self.assertEqual(app.load_revision_slots(),self.slots)
+            self.assertEqual([slot for slot in app.load_revision_slots() if not slot.get("school_occurrence")],self.slots)
 
     def test_shared_budget_and_no_key_manual_fallback(self):
         self.client.login()

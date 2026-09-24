@@ -15,6 +15,7 @@ import preferences
 import school_timetable as school
 import timetable_import
 import timetable_views
+import revision_sessions as sessions
 
 MAX_REQUEST_BYTES = topic_import.MAX_DOCUMENT_BYTES + 256 * 1024
 
@@ -163,7 +164,7 @@ class AccountHandlerMixin:
                 self.redirect("/login")
                 return
             with accounts.user_lock(user["id"]):
-                if self.handle_school(path, form, post) or self.handle_topics(path, form, post):
+                if self.handle_sessions(path, form, post) or self.handle_school(path, form, post) or self.handle_topics(path, form, post):
                     return
                 if post:
                     super().do_POST()
@@ -206,6 +207,21 @@ class AccountHandlerMixin:
         if not accounts.consume_limit("analysis_total", "all", int(os.environ.get("REVISION_AI_SITE_DAILY_LIMIT", "100")), 86400):
             raise ValueError("Document analysis has reached today's site limit. You can still enter topics and timetables manually.")
 
+    def handle_sessions(self, path, form, post):
+        routes = {"/revision/slot": "save", **{
+            "/revision/slot/" + action: action for action in ("complete", "uncomplete", "clear", "delete", "restore")}}
+        if not post or path not in routes:
+            return False
+        action = routes[path]
+        slot = sessions.change(self.application, action, form)
+        if action == "delete":
+            self.redirect("/revision?view=week&date=" + slot["date"] + "&deleted=" + sessions.reference(slot))
+        elif action == "restore":
+            self.redirect("/revision?view=week&date=" + slot["date"])
+        else:
+            self.redirect_back_to_revision()
+        return True
+
     def handle_school(self, path, form, post):
         app = self.application
         query = parse_qs(urlparse(self.path).query)
@@ -247,8 +263,8 @@ class AccountHandlerMixin:
             school.discard_draft(value("draft"))
             self.redirect("/planner?notice=Upload+discarded.+Your+saved+timetable+has+not+changed.")
         elif post and path == "/planner/timetable/use-free-period":
-            school.add_revision(app, value("date"), value("index"), value("version"))
-            self.redirect("/revision?view=week&date=" + value("date"))
+            ref = school.add_revision(app, value("date"), value("index"), value("version"))
+            self.redirect("/revision?view=week&date=" + value("date") + "&session=" + ref)
         else:
             return False
         return True

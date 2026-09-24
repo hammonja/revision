@@ -153,7 +153,7 @@ Photosynthesis</pre>
                 <p>The document is sent to OpenAI using the site owner's account. No saved timetable changes until you accept the review. Topic and timetable analysis share the site's daily document allowance.</p>"""),
             section("review", "How to review and refine the timetable", """
                 <p>Read the note about missing or uncertain information. Open each weekday section and check the week, day, activity, period, times, type, room and teacher. Class codes are kept as printed so you can rename them yourself.</p>
-                <p>Untick <strong>Keep this entry</strong> to omit an item; use <strong>Add entry</strong> for anything missing. Choose <strong>Free period</strong> only when that time is available. Blank cells are not treated as free periods. If times are unknown, leave both empty: the activity still appears, but cannot yet be turned into revision.</p>
+                <p>Untick <strong>Keep this entry</strong> to omit an item; use <strong>Add entry</strong> for anything missing. Choose <strong>Free period</strong> only when that time is available. Blank cells are not treated as free periods. If times are unknown, leave both empty: you can still assign topics, but the session will not add topic hours until it has valid times.</p>
                 <p>Select <strong>Save school timetable</strong> to create the daily schedule in your space. A replacement changes the school timetable but keeps revision sessions already created. <strong>Discard this upload</strong> removes only the pending import.</p>
                 <p>Pending reviews appear in Planner for 24 hours. Unsaved form edits are not autosaved; the original extracted suggestions remain until you save or discard them.</p>"""),
             section("weeks-and-holidays", "How to set Week A/B, term dates and holidays", """
@@ -163,12 +163,12 @@ Photosynthesis</pre>
                 <p>A/B weeks alternate by calendar week even across holidays. If your school's rotation differs after a holiday, use Edit timetable to adjust the Week A Monday. The daily view and calendar use the saved pattern immediately.</p>"""),
             section("daily-plan", "How to use your daily plan", """
                 <p>Planner opens on today. Use <strong>Previous day</strong>, <strong>Next day</strong> or the date field and <strong>Show day</strong> to see another day. <strong>Today</strong> returns to the current date; <strong>Print day</strong> prints the visible daily plan.</p>
-                <p>The list combines lessons, free periods and revision sessions. School entries also appear on the Revision calendar; select one to open its day in Planner. School lessons do not count as completed revision or topic hours.</p>
+                <p>The list combines lessons, free periods and revision sessions. Select <strong>Open session</strong> to open an entry on the Revision calendar. You can also click it directly in the calendar. School lessons have a fixed subject and do not count as completed revision or topic hours.</p>
                 <p>Choose <strong>Edit timetable</strong> to change the weekly pattern later. <strong>View original document</strong> opens the saved source for checking. When analysis is unavailable, <strong>Enter a timetable manually</strong> opens the same editor without an upload.</p>"""),
-            section("free-periods", "How to turn a free period into revision", """
-                <ol><li>Find the date you want in Planner.</li><li>Beside a free period with times, select <strong>Use for revision</strong>.</li><li>On Revision, turn on <strong>Edit mode</strong> and open the new <strong>Free period revision</strong> slot.</li><li>Choose a subject and topics and save the slot.</li></ol>
-                <p>This adds a session for that date only. Existing sessions are preserved. The same period is not added twice, and overlapping revision is blocked. If revision already occupies the time, use <strong>View planned revision</strong>.</p>
-                <p>Changing the school timetable later does not move or remove previously created revision sessions. Complete the session after studying to record topic hours.</p>"""),
+            section("free-periods", "How to assign revision to a free period", """
+                <ol><li>Find the date on the Revision calendar, or select <strong>Open session</strong> beside the period in Planner.</li><li>Click an unassigned free period to open the normal session editor.</li><li>Choose a subject and topics, then select <strong>Save slot</strong>.</li><li>After studying, open the session and select <strong>Complete</strong>.</li></ol>
+                <p>Your assignment belongs to that date only. Free periods and sessions from a day plan use the same controls. To change an assigned session, choose <strong>Edit session</strong> in its viewer or turn on <strong>Edit mode</strong> before opening it. Lessons with a school subject stay fixed.</p>
+                <p>Editing the school pattern preserves your assignments and completed work. Uncompleted school sessions follow updated timetable times; completed sessions keep their recorded duration. A previous revision session at exactly the same date and times as a free period is shown as one session.</p>"""),
         ],
     },
     {
@@ -185,8 +185,8 @@ Photosynthesis</pre>
                 <li>Choose <strong>Auto</strong> for a study session that you will assign a subject to later.</li><li>Choose <strong>Save entry</strong>.</li></ol>
                 <p>A day plan is a reusable pattern of times. Creating it does not yet add any dated sessions to your calendar.</p>"""),
             section("auto-colour", "Auto versus a fixed colour", """
-                <p><strong>Auto</strong> creates slots that can be edited in Revision to choose a subject and topics. Their colour follows the assigned subject.</p>
-                <p>A fixed colour can be used for a labelled block such as lunch or a break. Fixed-colour slots open in the session viewer; they cannot be assigned subjects through Edit mode. Use Auto for revision sessions you want to configure.</p>"""),
+                <p><strong>Auto</strong> makes a session's colour follow its assigned subject. A fixed colour keeps your chosen colour.</p>
+                <p>Both options let you assign subjects and topics on the Revision calendar. Colour does not lock a session. Only school lessons have a fixed subject.</p>"""),
             section("populate", "How to put the plan onto your calendar", """
                 <ol><li>Tick the checkbox beside each day plan entry you want to use.</li><li>Select <strong>Populate</strong>.</li>
                 <li>Choose a start and end date. For one day, use the same date in both fields.</li><li>Confirm with <strong>Populate</strong>, then find the dates in Revision.</li></ol>
@@ -194,7 +194,7 @@ Photosynthesis</pre>
                 <p>Exact matches with the same date, entry name and start/end times are skipped when you populate again. Existing slot assignments and completion records are preserved.</p>"""),
             section("change-plan", "How to change a day plan", """
                 <p>Use an entry's pencil button to edit it, or its bin button to remove it from the pattern. Changes affect future population; they do not move, change or remove sessions already created on the calendar.</p>
-                <p>Populating a changed entry may add a new slot alongside an old one because its name or times no longer match. There is currently no calendar-slot delete or move control. For clearing a subject and topics while keeping the slot, see <a href="/help/revision#change-session">changing a revision session</a>.</p>"""),
+                <p>Populating a changed entry may add a new slot alongside an old one because its name or times no longer match. Open an unwanted dated session and choose <strong>Delete session</strong>. For clearing a subject and topics while keeping the slot, see <a href="/help/revision#change-session">changing a revision session</a>.</p>"""),
         ],
     },
     {
@@ -206,7 +206,7 @@ Photosynthesis</pre>
                 <p>Use the left and right arrows to move through dates. Choose <strong>Week</strong> for a weekly view or <strong>Month</strong> for an overview. Your last calendar view is remembered in this browser for your account.</p>
                 <p>If you have not populated any slots, first create and populate entries in <a href="/planner">Planner</a>. If slots exist but the current week is empty, navigate to the dates you populated. Uploaded exams also appear on the revision calendar, labelled <strong>EXAM</strong>.</p>"""),
             section("assign-topics", "How to assign a subject and topics to a slot", """
-                <ol><li>Turn on <strong>Edit mode</strong> above the calendar.</li><li>Select a slot created from an <strong>Auto</strong> day plan entry.</li>
+                <ol><li>Click an unassigned session or free period on the calendar. For an assigned session, choose <strong>Edit session</strong> in its viewer, or turn on <strong>Edit mode</strong> before opening it.</li>
                 <li>Choose a subject, then choose a topic in the dropdown.</li><li>Use the <strong>+</strong> button to add more topic rows, or a row's bin button to remove it from this session.</li>
                 <li>Choose <strong>Save slot</strong>.</li></ol>
                 <p>The dropdown lists active topics for the chosen subject. To create a new topic, use Subjects → Add topics / documents first. Removing a topic row here does not delete it from the subject.</p>
@@ -216,12 +216,16 @@ Photosynthesis</pre>
                 <li>When you have finished the work, select <strong>Complete</strong>.</li></ol>
                 <p>The session turns green and its button says Completed. Time is recorded from the scheduled start and end times; there is no stopwatch or automatic tracking of time spent on the page.</p>"""),
             section("change-session", "How to change or undo a session", """
-                <p>Turn Edit mode on and reopen an Auto slot:</p>
+                <p>Choose Edit session in the session viewer, or turn Edit mode on and reopen a session. School lessons have a fixed subject and are changed through Planner → Edit timetable.</p>
                 <ul><li><strong>Save slot</strong> saves the chosen subject and topics and resets the session to not completed.</li>
                 <li><strong>Uncomplete</strong> removes the completion mark while keeping the subject and topics.</li>
                 <li><strong>Clear</strong> removes the subject, topics and completion mark. The dated time slot stays on the calendar.</li>
                 <li><strong>Cancel</strong> closes the editor without saving your changes.</li></ul>
-                <p>You can revise the same topic in several sessions. There is currently no drag-and-drop rescheduling or control for deleting a populated time slot.</p>"""),
+                <p>You can revise the same topic in several sessions. There is currently no drag-and-drop rescheduling.</p>"""),
+            section("delete-session", "How to delete a session or undo deletion", """
+                <ol><li>Open the session on the Revision calendar, or use <strong>Open session</strong> in Planner.</li><li>Select <strong>Delete session</strong> in the viewer or editor.</li><li>If you deleted it by mistake, select <strong>Undo deletion</strong> in the confirmation above the calendar.</li></ol>
+                <p>Deletion removes that dated session from both views. You can delete lessons, free periods and sessions made from a day plan. Deleting a school entry removes only that occurrence; other dates and the weekly pattern stay in place, and refreshing the page does not bring it back.</p>
+                <p>A deleted session no longer contributes to progress or topic hours. Undo restores its assignment and completion state. To remove a recurring school entry from the pattern, use Planner → Edit timetable.</p>"""),
         ],
     },
     {
@@ -286,7 +290,7 @@ Photosynthesis</pre>
                 <p>If fewer topics were added than expected, existing titles were skipped. Adding the same title with a different description does not overwrite the original.</p>"""),
             section("cannot-edit-slot", "The calendar is empty or a slot will not edit", """
                 <p>First create entries in Planner, tick the entries and Populate a date range. A day plan entry alone is not a dated slot. Then navigate Revision to that range.</p>
-                <p>Turn Edit mode on to assign subjects. Only slots created with <strong>Auto</strong> open the editor; a fixed-colour block opens the viewer instead. Changing a day plan entry later does not change existing calendar slots.</p>
+                <p>Click an unassigned session to assign subjects, or choose Edit session for an assigned one. Fixed-colour day plan blocks and school free periods are editable too. School lessons have a fixed subject; change those through Planner → Edit timetable. Changing a day plan entry later does not change existing calendar sessions.</p>
                 <p>If Populate does nothing, check that at least one row is ticked. Exact duplicate slots are intentionally skipped.</p>"""),
             section("upload-errors", "A document will not upload or analyse", """
                 <p>For subject topics, check the extension (.pdf, .docx, .txt or .md), that the file is not empty, and that it is no larger than 10 MB. Save a smaller document or just the relevant pages if necessary.</p>
