@@ -10,8 +10,6 @@ from pathlib import Path
 import re
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
-import fitz
-
 
 HOST = "127.0.0.1"
 PORT = 3000
@@ -20,6 +18,7 @@ SUBJECTS_FILE = DATA_DIR / "subjects.json"
 EXAMS_FILE = DATA_DIR / "exams.json"
 DAY_PLAN_FILE = DATA_DIR / "day_plan.json"
 REVISION_SLOTS_FILE = DATA_DIR / "revision_slots.json"
+ACTIVE_TOPICS_FILE = DATA_DIR / "active_topics.json"
 REVISION_CONTENT_FILE = DATA_DIR / "crispins_year10_revision_data.json"
 REVISION_CONTENT_DIR = DATA_DIR / "crispins_year10_subject_docs"
 UPLOADS_DIR = Path("uploads")
@@ -103,6 +102,25 @@ def save_revision_slots(slots):
         json.dump(slots, file, indent=2)
 
 
+def load_active_topics():
+    if not ACTIVE_TOPICS_FILE.exists():
+        return {}
+
+    try:
+        with ACTIVE_TOPICS_FILE.open("r", encoding="utf-8") as file:
+            active_topics = json.load(file)
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+    return active_topics if isinstance(active_topics, dict) else {}
+
+
+def save_active_topics(active_topics):
+    DATA_DIR.mkdir(exist_ok=True)
+    with ACTIVE_TOPICS_FILE.open("w", encoding="utf-8") as file:
+        json.dump(active_topics, file, indent=2)
+
+
 def load_content_documents():
     if not REVISION_CONTENT_FILE.exists():
         return {}
@@ -147,6 +165,20 @@ def load_content_topics():
         if name:
             topics[name] = revision_topics
     return topics
+
+
+def active_content_topics(content_topics=None, active_topics=None):
+    content_topics = load_content_topics() if content_topics is None else content_topics
+    active_topics = load_active_topics() if active_topics is None else active_topics
+    active = {}
+    for subject, topics in content_topics.items():
+        configured = active_topics.get(subject)
+        if configured is None:
+            active[subject] = topics
+            continue
+        configured_set = {str(topic) for topic in configured}
+        active[subject] = [topic for topic in topics if topic.get("title") in configured_set]
+    return active
 
 
 def revised_topics_by_subject(slots=None):
@@ -242,6 +274,14 @@ def safe_upload_name(filename):
 
 
 def extract_pdf_text(path):
+    try:
+        import fitz
+    except Exception as error:
+        raise RuntimeError(
+            "PDF parsing needs PyMuPDF. On the Pi run: "
+            "python -m pip uninstall fitz frontend -y && python -m pip install PyMuPDF"
+        ) from error
+
     document = fitz.open(path)
     return "\n".join(page.get_text("text") for page in document)
 
@@ -1353,7 +1393,7 @@ def render_revision(query):
     exams = load_exams().get("exams", [])
     subjects = load_subjects()
     content_documents = load_content_documents()
-    content_topics = load_content_topics()
+    content_topics = active_content_topics()
     revised_topics = revised_topics_by_subject(slots)
     content_topics_json = json.dumps(content_topics)
     revised_topics_json = json.dumps(revised_topics)
@@ -2287,6 +2327,8 @@ def render_subjects():
     day_plan = load_day_plan()
     content_documents = load_content_documents()
     content_topics = load_content_topics()
+    active_topics = load_active_topics()
+    active_topic_map = active_content_topics(content_topics, active_topics)
     hours_by_topic = topic_hour_totals()
     used_colours_json = json.dumps(sorted(used_colours(subjects, day_plan)))
     subject_default_colour = first_available_colour(subjects, day_plan)
@@ -2308,13 +2350,19 @@ def render_subjects():
         )
         name = escape(name_raw)
         topic_rows = []
+        active_for_subject = {
+            topic.get("title")
+            for topic in active_topic_map.get(name_raw, content_topics.get(name_raw, []))
+        }
         for topic in content_topics.get(name_raw, []):
             title = str(topic.get("title", ""))
             description = str(topic.get("description", ""))
             totals = hours_by_topic.get(name_raw, {}).get(title, {"complete": 0, "planned": 0})
+            checked = " checked" if title in active_for_subject else ""
             topic_rows.append(
                 f"""
                 <tr>
+                    <td class="select-column"><input class="row-checkbox" type="checkbox" name="active_topic" value="{escape(title, quote=True)}"{checked}></td>
                     <td>{escape(title)}</td>
                     <td>{escape(description)}</td>
                     <td>{format_hours(totals.get("complete", 0))}</td>
@@ -2324,11 +2372,12 @@ def render_subjects():
             )
 
         if not topic_rows:
-            topic_rows.append('<tr><td colspan="4">No content topics found for this subject.</td></tr>')
+            topic_rows.append('<tr><td colspan="5">No content topics found for this subject.</td></tr>')
 
         assigned_topics = set(hours_by_topic.get(name_raw, {}).keys())
-        total_topics = len(content_topics.get(name_raw, []))
-        assigned_count = len(assigned_topics)
+        active_titles = {topic.get("title") for topic in active_topic_map.get(name_raw, [])}
+        total_topics = len(active_titles)
+        assigned_count = len(assigned_topics & active_titles)
         progress_percent = round((assigned_count / total_topics) * 100) if total_topics else 0
         subject_rows.append(
             f"""
@@ -2365,10 +2414,14 @@ def render_subjects():
             </tr>
             <tr class="subject-detail-row" id="subject-detail-{index}">
                 <td class="subject-detail-cell" colspan="4">
-                    <table class="topic-subtable">
-                        <thead><tr><th>Topic</th><th>Details</th><th>Complete hours</th><th>Planned hours</th></tr></thead>
-                        <tbody>{"".join(topic_rows)}</tbody>
-                    </table>
+                    <form method="post" action="/subjects/active-topics">
+                        <input type="hidden" name="subject" value="{escape(name_raw, quote=True)}">
+                        <table class="topic-subtable">
+                            <thead><tr><th class="select-column">Active</th><th>Topic</th><th>Details</th><th>Complete hours</th><th>Planned hours</th></tr></thead>
+                            <tbody>{"".join(topic_rows)}</tbody>
+                        </table>
+                        <div class="modal-actions"><button type="submit">Save active topics</button></div>
+                    </form>
                 </td>
             </tr>
             """
@@ -2651,6 +2704,10 @@ class RevisionHandler(BaseHTTPRequestHandler):
             form = parse_qs(body.decode("utf-8"))
             self.delete_subject(form)
             self.redirect("/subjects")
+        elif path == "/subjects/active-topics":
+            form = parse_qs(body.decode("utf-8"))
+            self.save_active_topic_selection(form)
+            self.redirect("/subjects")
         elif path == "/settings/day-plan":
             form = parse_qs(body.decode("utf-8"))
             self.save_day_plan_entry(form)
@@ -2735,6 +2792,23 @@ class RevisionHandler(BaseHTTPRequestHandler):
         if 0 <= index < len(subjects):
             del subjects[index]
             save_subjects(subjects)
+
+    def save_active_topic_selection(self, form):
+        subject = form.get("subject", [""])[0].strip()
+        if not subject:
+            return
+
+        content_topics = load_content_topics()
+        valid_topics = {topic.get("title") for topic in content_topics.get(subject, [])}
+        selected = [
+            topic
+            for topic in form.get("active_topic", [])
+            if topic in valid_topics
+        ]
+
+        active_topics = load_active_topics()
+        active_topics[subject] = selected
+        save_active_topics(active_topics)
 
     def save_day_plan_entry(self, form):
         title = form.get("title", [""])[0].strip()
@@ -2915,7 +2989,11 @@ class RevisionHandler(BaseHTTPRequestHandler):
         with path.open("wb") as file:
             file.write(upload["content"])
 
-        text = extract_pdf_text(path)
+        try:
+            text = extract_pdf_text(path)
+        except RuntimeError as error:
+            print(error)
+            return
         save_exams(parse_exam_timetable(text, filename))
 
     def parse_multipart(self, body):
