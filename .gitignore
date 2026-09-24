@@ -4,3 +4,8 @@ __pycache__/
 venv/
 .env
 *.log
+data/users/
+data/accounts.sqlite3*
+.pytest_cache/
+.env.*
+!.env.example

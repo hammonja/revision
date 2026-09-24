@@ -6,22 +6,28 @@ from datetime import timedelta
 from html import escape
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+import mimetypes
+import os
+import sys
 from pathlib import Path
 import re
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
 
-HOST = "127.0.0.1"
-PORT = 3000
-DATA_DIR = Path("data")
-SUBJECTS_FILE = DATA_DIR / "subjects.json"
-EXAMS_FILE = DATA_DIR / "exams.json"
-DAY_PLAN_FILE = DATA_DIR / "day_plan.json"
-REVISION_SLOTS_FILE = DATA_DIR / "revision_slots.json"
-ACTIVE_TOPICS_FILE = DATA_DIR / "active_topics.json"
-REVISION_CONTENT_FILE = DATA_DIR / "crispins_year10_revision_data.json"
-REVISION_CONTENT_DIR = DATA_DIR / "crispins_year10_subject_docs"
-UPLOADS_DIR = Path("uploads")
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).resolve().parent / ".env")
+import accounts
+from accounts import user_dir, user_file, atomic_json
+from web_accounts import AccountHandlerMixin
+import topics
+
+HOST = os.environ.get("HOST", "127.0.0.1")
+PORT = int(os.environ.get("PORT", "3000"))
+
+
+def script_json(value):
+    return json.dumps(value).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+
 
 COLOURS = [
     ("Ruby", "#d7263d"),
@@ -46,11 +52,11 @@ TIME_RE = re.compile(r"^\d{2}:\d{2}$")
 
 
 def load_subjects():
-    if not SUBJECTS_FILE.exists():
+    if not user_file("subjects.json").exists():
         return []
 
     try:
-        with SUBJECTS_FILE.open("r", encoding="utf-8") as file:
+        with user_file("subjects.json").open("r", encoding="utf-8") as file:
             subjects = json.load(file)
     except (json.JSONDecodeError, OSError):
         return []
@@ -59,17 +65,15 @@ def load_subjects():
 
 
 def save_subjects(subjects):
-    DATA_DIR.mkdir(exist_ok=True)
-    with SUBJECTS_FILE.open("w", encoding="utf-8") as file:
-        json.dump(subjects, file, indent=2)
+    atomic_json(user_file("subjects.json"), subjects)
 
 
 def load_day_plan():
-    if not DAY_PLAN_FILE.exists():
+    if not user_file("day_plan.json").exists():
         return []
 
     try:
-        with DAY_PLAN_FILE.open("r", encoding="utf-8") as file:
+        with user_file("day_plan.json").open("r", encoding="utf-8") as file:
             day_plan = json.load(file)
     except (json.JSONDecodeError, OSError):
         return []
@@ -78,17 +82,15 @@ def load_day_plan():
 
 
 def save_day_plan(day_plan):
-    DATA_DIR.mkdir(exist_ok=True)
-    with DAY_PLAN_FILE.open("w", encoding="utf-8") as file:
-        json.dump(day_plan, file, indent=2)
+    atomic_json(user_file("day_plan.json"), day_plan)
 
 
 def load_revision_slots():
-    if not REVISION_SLOTS_FILE.exists():
+    if not user_file("revision_slots.json").exists():
         return []
 
     try:
-        with REVISION_SLOTS_FILE.open("r", encoding="utf-8") as file:
+        with user_file("revision_slots.json").open("r", encoding="utf-8") as file:
             slots = json.load(file)
     except (json.JSONDecodeError, OSError):
         return []
@@ -97,17 +99,15 @@ def load_revision_slots():
 
 
 def save_revision_slots(slots):
-    DATA_DIR.mkdir(exist_ok=True)
-    with REVISION_SLOTS_FILE.open("w", encoding="utf-8") as file:
-        json.dump(slots, file, indent=2)
+    atomic_json(user_file("revision_slots.json"), slots)
 
 
 def load_active_topics():
-    if not ACTIVE_TOPICS_FILE.exists():
+    if not user_file("active_topics.json").exists():
         return {}
 
     try:
-        with ACTIVE_TOPICS_FILE.open("r", encoding="utf-8") as file:
+        with user_file("active_topics.json").open("r", encoding="utf-8") as file:
             active_topics = json.load(file)
     except (json.JSONDecodeError, OSError):
         return {}
@@ -116,17 +116,15 @@ def load_active_topics():
 
 
 def save_active_topics(active_topics):
-    DATA_DIR.mkdir(exist_ok=True)
-    with ACTIVE_TOPICS_FILE.open("w", encoding="utf-8") as file:
-        json.dump(active_topics, file, indent=2)
+    atomic_json(user_file("active_topics.json"), active_topics)
 
 
 def load_content_documents():
-    if not REVISION_CONTENT_FILE.exists():
+    if not user_file("crispins_year10_revision_data.json").exists():
         return {}
 
     try:
-        with REVISION_CONTENT_FILE.open("r", encoding="utf-8") as file:
+        with user_file("crispins_year10_revision_data.json").open("r", encoding="utf-8") as file:
             data = json.load(file)
     except (json.JSONDecodeError, OSError):
         return {}
@@ -141,11 +139,11 @@ def load_content_documents():
 
 
 def load_content_topics():
-    if not REVISION_CONTENT_FILE.exists():
+    if not user_file("crispins_year10_revision_data.json").exists():
         return {}
 
     try:
-        with REVISION_CONTENT_FILE.open("r", encoding="utf-8") as file:
+        with user_file("crispins_year10_revision_data.json").open("r", encoding="utf-8") as file:
             data = json.load(file)
     except (json.JSONDecodeError, OSError):
         return {}
@@ -244,11 +242,11 @@ def first_available_colour(subjects=None, day_plan=None, current_colour=None):
 
 
 def load_exams():
-    if not EXAMS_FILE.exists():
+    if not user_file("exams.json").exists():
         return {"source_file": None, "candidate": {}, "exams": []}
 
     try:
-        with EXAMS_FILE.open("r", encoding="utf-8") as file:
+        with user_file("exams.json").open("r", encoding="utf-8") as file:
             exams = json.load(file)
     except (json.JSONDecodeError, OSError):
         return {"source_file": None, "candidate": {}, "exams": []}
@@ -262,9 +260,7 @@ def load_exams():
 
 
 def save_exams(exams):
-    DATA_DIR.mkdir(exist_ok=True)
-    with EXAMS_FILE.open("w", encoding="utf-8") as file:
-        json.dump(exams, file, indent=2)
+    atomic_json(user_file("exams.json"), exams)
 
 
 def safe_upload_name(filename):
@@ -441,6 +437,12 @@ def render_layout(title, active_page, content, wide=False, body_attrs=""):
         ("planner", "/planner"),
         ("settings", "/settings"),
     ]
+    user = accounts.CURRENT_USER.get()
+    if user is None:
+        nav_items = []
+    brand = escape(user["display_name"] + "'s revision") if user else "Revision"
+    account_menu = '<form method="post" action="/logout"><button class="ghost-button" type="submit">Sign out</button></form>' if user else ""
+    storage_prefix = user["id"] if user else "guest"
     links = []
     for label, href in nav_items:
         active = " active" if active_page == label.lower() else ""
@@ -1243,10 +1245,10 @@ def render_layout(title, active_page, content, wide=False, body_attrs=""):
 </head>
 <body{body_attrs}>
     <header class="topbar">
-        <a class="brand" href="/">Joe&#x27;s GCSE mocks</a>
-        <nav class="nav" aria-label="Main navigation">
+        <a class="brand" href="/">{brand}</a>
+        <div class="account-nav"><nav class="nav" aria-label="Main navigation">
             {"".join(links)}
-        </nav>
+        </nav>{account_menu}</div>
     </header>
     <main{main_class}>
         {content}
@@ -1255,10 +1257,10 @@ def render_layout(title, active_page, content, wide=False, body_attrs=""):
     (() => {{
         const page = document.body.dataset.calendarPage;
         if (page) {{
-            localStorage.setItem(`${{page}}CalendarUrl`, window.location.pathname + window.location.search);
+            localStorage.setItem(`{storage_prefix}:${{page}}CalendarUrl`, window.location.pathname + window.location.search);
         }}
         ["revision", "exams"].forEach((name) => {{
-            const savedUrl = localStorage.getItem(`${{name}}CalendarUrl`);
+            const savedUrl = localStorage.getItem(`{storage_prefix}:${{name}}CalendarUrl`);
             const link = document.querySelector(`.nav-link[href="/${{name}}"]`);
             if (savedUrl && link) {{
                 link.href = savedUrl;
@@ -1271,13 +1273,18 @@ def render_layout(title, active_page, content, wide=False, body_attrs=""):
 
 
 def render_home():
-    content = """
+    user = accounts.current_user()
+    subjects = load_subjects()
+    topic_count = sum(len(items) for items in load_content_topics().values())
+    content = f"""
     <section class="panel">
-        <h1>coming soon</h1>
-        <p>The revision timetable will live here.</p>
+        <h1>Hello, {escape(user['display_name'])}</h1>
+        <p>Your revision starts here. You have {len(subjects)} subjects and {topic_count} topics in your space.</p>
+        <p>Add a subject, find topics in a document or write your own, then plan when to revise them.</p>
+        <div class="home-actions"><a href="/subjects">Manage your subjects</a><a href="/revision">Your revision timetable</a><a href="/planner">Plan your revision</a></div>
     </section>
     """
-    return render_layout("Joe's GCSE mocks", "home", content)
+    return render_layout(user["display_name"] + "'s revision", "home", content)
 
 
 def render_simple_page(page_title, body_text, active_page):
@@ -1395,8 +1402,8 @@ def render_revision(query):
     content_documents = load_content_documents()
     content_topics = active_content_topics()
     revised_topics = revised_topics_by_subject(slots)
-    content_topics_json = json.dumps(content_topics)
-    revised_topics_json = json.dumps(revised_topics)
+    content_topics_json = script_json(content_topics)
+    revised_topics_json = script_json(revised_topics)
     subject_colours = {
         str(subject.get("name", "")).casefold(): str(subject.get("colour", COLOURS[-1][1]))
         for subject in subjects
@@ -1504,7 +1511,7 @@ def render_revision(query):
                     slot_title = subject or slot_name
                     detail = slot_name if subject else "Choose subject"
                     topic_label = "Complete" if completed else (f"{topic_count} topic{'s' if topic_count != 1 else ''}" if topic_count else "No topics")
-                    safe_topics = json.dumps(topics if isinstance(topics, list) else [])
+                    safe_topics = script_json(topics if isinstance(topics, list) else [])
                     card_class = "exam-card completed" if completed else "exam-card"
                     card = (
                         f"""
@@ -1845,7 +1852,7 @@ def render_settings():
     day_plan = load_day_plan()
     exams_data = load_exams()
     all_used_colours = sorted(used_colours(subjects, day_plan))
-    used_colours_json = json.dumps(all_used_colours)
+    used_colours_json = script_json(all_used_colours)
     subject_default_colour = first_available_colour(subjects, day_plan)
     subject_rows = []
     for index, subject in enumerate(subjects):
@@ -2040,7 +2047,7 @@ def render_settings():
             {auto_button}
         </div>
         <div class="panel full-width">
-            <h1>Subjects</h1>
+            <h1>Your subjects</h1><p>Add a subject, then use “Add topics / documents” to build your revision list.</p>
             {subjects_html}
         </div>
         <div class="panel full-width">
@@ -2330,7 +2337,7 @@ def render_subjects():
     active_topics = load_active_topics()
     active_topic_map = active_content_topics(content_topics, active_topics)
     hours_by_topic = topic_hour_totals()
-    used_colours_json = json.dumps(sorted(used_colours(subjects, day_plan)))
+    used_colours_json = script_json(sorted(used_colours(subjects, day_plan)))
     subject_default_colour = first_available_colour(subjects, day_plan)
     subject_rows = []
     for index, subject in enumerate(subjects):
@@ -2396,6 +2403,7 @@ def render_subjects():
                     <span class="progress-label">{progress_percent}% | {assigned_count} of {total_topics} topics assigned</span>
                 </td>
                 <td class="actions">
+                    <a class="topic-link" href="{topics.manager_url(name_raw)}">Add topics / documents</a>
                     {content_icon}
                     <button class="icon-button edit-subject" type="button" aria-label="Edit {name}"
                         data-index="{index}" data-name="{escape(name_raw, quote=True)}"
@@ -2430,7 +2438,7 @@ def render_subjects():
     content = f"""
     <section class="settings-grid">
         <div class="panel full-width">
-            <h1>Subjects</h1>
+            <h1>Your subjects</h1><p>Add a subject, then use “Add topics / documents” to build your revision list.</p>
             <div class="table-wrap">
                 <table class="subject-table">
                     <thead><tr><th>Subject</th><th colspan="2">Topic progress</th><th class="actions">Actions</th></tr></thead>
@@ -2522,7 +2530,7 @@ def render_subjects():
 def render_planner():
     subjects = load_subjects()
     day_plan = load_day_plan()
-    used_colours_json = json.dumps(sorted(used_colours(subjects, day_plan)))
+    used_colours_json = script_json(sorted(used_colours(subjects, day_plan)))
     day_rows = []
     for index, entry in enumerate(day_plan):
         title_raw = str(entry.get("title", ""))
@@ -2668,7 +2676,7 @@ def render_settings_page():
     return render_layout("Settings", "settings", content)
 
 
-class RevisionHandler(BaseHTTPRequestHandler):
+class LegacyRevisionHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed_url = urlparse(self.path)
         path = parsed_url.path
@@ -2693,8 +2701,7 @@ class RevisionHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
-        length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(length)
+        body = self.request_body
 
         if path == "/settings":
             form = parse_qs(body.decode("utf-8"))
@@ -2761,6 +2768,10 @@ class RevisionHandler(BaseHTTPRequestHandler):
         except ValueError:
             index = None
 
+        if len(subject) > 60 or len(exam_board) > 60 or len(paper) > 80:
+            raise ValueError("Please shorten the subject name, exam board or paper.")
+        if any(item.get("name", "").casefold() == subject.casefold() for i, item in enumerate(subjects) if i != index):
+            raise ValueError("You already have a subject with that name.")
         day_plan = load_day_plan()
         other_subjects = [item for i, item in enumerate(subjects) if i != index]
         current_colour = subjects[index].get("colour") if index is not None and 0 <= index < len(subjects) else None
@@ -2776,11 +2787,42 @@ class RevisionHandler(BaseHTTPRequestHandler):
         }
 
         if index is not None and 0 <= index < len(subjects):
+            previous_name = subjects[index]["name"]
+            if previous_name != subject:
+                self.rename_subject_content(previous_name, subject)
             subjects[index] = subject_data
         else:
             subjects.append(subject_data)
 
         save_subjects(subjects)
+
+    def rename_subject_content(self, previous, renamed):
+        data = topics.read_content()
+        entry = topics.entry_for(data, previous)
+        if entry:
+            entry["display_name"] = renamed
+            atomic_json(user_file(topics.CONTENT_NAME), data)
+        active = load_active_topics()
+        if previous in active:
+            active[renamed] = active.pop(previous)
+            save_active_topics(active)
+        slots = load_revision_slots()
+        for slot in slots:
+            if slot.get("subject") == previous:
+                slot["subject"] = renamed
+        save_revision_slots(slots)
+        exams = load_exams()
+        for exam in exams.get("exams", []):
+            if exam.get("subject") == previous:
+                exam["subject"] = renamed
+        save_exams(exams)
+        drafts = user_file("drafts")
+        if drafts.exists():
+            for path in drafts.glob("*.json"):
+                draft = json.loads(path.read_text(encoding="utf-8"))
+                if draft.get("subject") == previous:
+                    draft["subject"] = renamed
+                    atomic_json(path, draft)
 
     def delete_subject(self, form):
         try:
@@ -2984,8 +3026,8 @@ class RevisionHandler(BaseHTTPRequestHandler):
         if not filename.lower().endswith(".pdf"):
             filename = f"{filename}.pdf"
 
-        UPLOADS_DIR.mkdir(exist_ok=True)
-        path = UPLOADS_DIR / filename
+        user_file("uploads").mkdir(exist_ok=True)
+        path = user_file("uploads") / filename
         with path.open("wb") as file:
             file.write(upload["content"])
 
@@ -3038,51 +3080,53 @@ class RevisionHandler(BaseHTTPRequestHandler):
 
     def send_upload(self, path):
         filename = safe_upload_name(unquote(path.removeprefix("/uploads/")))
-        file_path = UPLOADS_DIR / filename
+        file_path = user_file("uploads") / filename
         try:
-            resolved_uploads = UPLOADS_DIR.resolve()
+            resolved_uploads = user_file("uploads").resolve()
             resolved_file = file_path.resolve()
         except OSError:
             self.send_error(404, "Not Found")
             return
 
-        if resolved_uploads not in resolved_file.parents or not resolved_file.exists():
+        if resolved_uploads not in resolved_file.parents or not resolved_file.is_file():
             self.send_error(404, "Not Found")
             return
 
         body = resolved_file.read_bytes()
         self.send_response(200)
-        self.send_header("Content-Type", "application/pdf")
+        self.send_header("Content-Type", mimetypes.guess_type(filename)[0] or "application/octet-stream")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Content-Disposition", f'inline; filename="{filename}"')
+        disposition = "inline" if filename.lower().endswith(".pdf") else "attachment"
+        self.send_header("Content-Disposition", f"{disposition}; filename*=UTF-8''{quote(filename, safe='')}")
         self.end_headers()
         self.wfile.write(body)
 
     def send_content_file(self, path):
         filename = safe_upload_name(unquote(path.removeprefix("/content/")))
-        file_path = REVISION_CONTENT_DIR / filename
+        file_path = user_file("crispins_year10_subject_docs") / filename
         try:
-            resolved_docs = REVISION_CONTENT_DIR.resolve()
+            resolved_docs = user_file("crispins_year10_subject_docs").resolve()
             resolved_file = file_path.resolve()
         except OSError:
             self.send_error(404, "Not Found")
             return
 
-        if resolved_docs not in resolved_file.parents or not resolved_file.exists():
+        if resolved_docs not in resolved_file.parents or not resolved_file.is_file():
             self.send_error(404, "Not Found")
             return
 
         body = resolved_file.read_bytes()
         self.send_response(200)
-        self.send_header("Content-Type", "application/pdf")
+        self.send_header("Content-Type", mimetypes.guess_type(filename)[0] or "application/octet-stream")
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Content-Disposition", f'inline; filename="{filename}"')
+        disposition = "inline" if filename.lower().endswith(".pdf") else "attachment"
+        self.send_header("Content-Disposition", f"{disposition}; filename*=UTF-8''{quote(filename, safe='')}")
         self.end_headers()
         self.wfile.write(body)
 
     def send_html(self, html):
-        body = html.encode("utf-8")
-        self.send_response(200)
+        body = self.prepare_html(html).encode("utf-8")
+        self.send_response(getattr(self, "html_status", 200))
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -3107,7 +3151,12 @@ class RevisionHandler(BaseHTTPRequestHandler):
         print(f"{self.address_string()} - {format % args}")
 
 
+class RevisionHandler(AccountHandlerMixin, LegacyRevisionHandler):
+    application = sys.modules[__name__]
+
+
 def main():
+    accounts.initialize()
     server = ThreadingHTTPServer((HOST, PORT), RevisionHandler)
     print(f"Revision timetable server running at http://{HOST}:{PORT}")
     server.serve_forever()
